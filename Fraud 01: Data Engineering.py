@@ -36,7 +36,7 @@ display(dbutils.fs.ls('/user/hive/warehouse/'+db+'.db'))
 
 # COMMAND ----------
 
-# MAGIC %md # Fraud Analytics
+# MAGIC %md # Fraud 01: Data Engineering
 
 # COMMAND ----------
 
@@ -337,6 +337,27 @@ visits_stream.join(locations, on='atm_id', how='left') \
 # MAGIC 
 # MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.scientist@databricks.com`;
 # MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.analyst@databricks.com`
+
+# COMMAND ----------
+
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
