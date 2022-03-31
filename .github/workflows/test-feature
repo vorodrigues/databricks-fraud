@@ -1,0 +1,30 @@
+name: Python Package using Conda
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+
+  test-feature:
+  
+    runs-on: ubuntu-latest
+    
+    steps:
+    
+    - uses: actions/checkout@v3
+    
+    - name: install databricks-cli
+      run: pip install databricks-cli requests
+    
+    - name: configure jobs cli
+      run: databricks jobs configure --version=2.1
+    
+    - name: run tests
+      run: python tests/test 
+    
+    #- name: update production
+    #  run: databricks repos update --path /Repos/pipelines/Dotabricks --branch main
+    #  env:
+    #    DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
+    #    DATABRICKS_TOKEN: ${{secrets.DATABRICKS_TOKEN}}

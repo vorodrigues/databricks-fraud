@@ -1,0 +1,15 @@
+{
+    "settings": {
+        "existing_cluster_id": "0328-145049-uh1hgn78",
+        "notebook_task": {
+            "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 04: Model Scoring",
+            "base_parameters": {
+                "db": "vr_fraud"
+            }
+        },
+        "timeout_seconds": 0,
+        "email_notifications": {},
+        "name": "VR ScoreModel",
+        "max_concurrent_runs": 1
+    }
+}
