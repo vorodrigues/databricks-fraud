@@ -1,8 +1,8 @@
 name: Python Package using Conda
 
 on:
-  push:
-    branches: [ prod ]
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
 
