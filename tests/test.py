@@ -38,9 +38,30 @@ now = now.strftime('%Y-%m-%d-%H-%M-%S')
 # COMMAND ----------
 
 print('Submitting run...')
-rid = jobs.submit_run(
+r = jobs.submit_run(
   run_name='vr-test-fraud-'+now, 
   existing_cluster_id=settings['existing_cluster_id'],
   notebook_task=settings['notebook_task']
 )
-print(rid)
+run_id = r['run_id']
+print(run_id)
+
+# COMMAND ----------
+
+from time import sleep
+wait = True
+while wait:
+  r = jobs.get_run_output(run_id=run_id)
+  state = r['metadata']['state']['life_cycle_state']
+  wait = True if 'result_state' not in r['metadata']['state'] else False
+  sleep(5)
+
+# COMMAND ----------
+
+result = r['metadata']['state']['result_state']
+print(result)
+
+# COMMAND ----------
+
+if result != 'SUCCESS':
+  raise Exception('TEST FAILED!!!')
