@@ -1,6 +1,6 @@
 # Databricks notebook source
 from databricks_cli.sdk.api_client import ApiClient
-db = ApiClient(host='https://e2-demo-field-eng.cloud.databricks.com', token='dapi7e2301c9f82c2681009f7794cf265dcc', api_version='2.1')
+db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419d5466bad7d8bc58e2678', api_version='2.1')
 
 # COMMAND ----------
 
@@ -10,8 +10,24 @@ jobs = JobsService(db)
 # COMMAND ----------
 
 import json
-with open('./job_settings', 'r') as f:
-  settings = json.load(f)['settings']
+
+f = {
+    "settings": {
+        "existing_cluster_id": "0331-230110-ojy94y49",
+        "notebook_task": {
+            "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/test-nb",
+            "base_parameters": {
+                "table": "atm_customers"
+            }
+        },
+        "timeout_seconds": 0,
+        "email_notifications": {},
+        "name": "test-nb",
+        "max_concurrent_runs": 1
+    }
+}
+
+settings = json.loads(json.dumps(f))['settings']
 
 # COMMAND ----------
 
@@ -21,8 +37,10 @@ now = now.strftime('%Y-%m-%d-%H-%M-%S')
 
 # COMMAND ----------
 
-jobs.submit_run(
+print('Submitting run...')
+rid = jobs.submit_run(
   run_name='vr-test-fraud-'+now, 
   existing_cluster_id=settings['existing_cluster_id'],
   notebook_task=settings['notebook_task']
 )
+print(rid)
