@@ -1,8 +1,4 @@
 # Databricks notebook source
-print('hello')
-
-# COMMAND ----------
-
 from databricks_cli.sdk.api_client import ApiClient
 db = ApiClient(host='https://e2-demo-field-eng.cloud.databricks.com', token='dapi7e2301c9f82c2681009f7794cf265dcc', api_version='2.1')
 
