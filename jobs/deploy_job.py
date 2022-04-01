@@ -4,6 +4,15 @@ db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419
 
 # COMMAND ----------
 
+from databricks_cli.sdk.service import ReposService
+repos = ReposService(db)
+
+# COMMAND ----------
+
+repos.update_repo(id=12510874, branch='prod')
+
+# COMMAND ----------
+
 from databricks_cli.sdk.service import JobsService
 jobs = JobsService(db)
 
@@ -89,8 +98,3 @@ else:
   with open('./job.id', 'w') as f:
     f.write(str(job_id))
   print(job_id)
-
-# COMMAND ----------
-
-from databricks_cli.sdk.service import ReposService
-repos = ReposService(db)
