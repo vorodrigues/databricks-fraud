@@ -1,11 +1,17 @@
 # Databricks notebook source
-# dbutils.widgets.text('host', 'https://demo.cloud.databricks.com')
-# dbutils.widgets.text('token', '')
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("host")
+parser.add_argument("token")
+args = parser.parse_args()
+
+host = args.host
+token = args.token
 
 # COMMAND ----------
 
-dbutils.widgets.get('host')
-dbutils.widgets.get('token')
+print('Starting deployment...')
 
 # COMMAND ----------
 
