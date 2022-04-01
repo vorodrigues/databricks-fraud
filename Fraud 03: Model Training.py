@@ -3,7 +3,12 @@
 
 # COMMAND ----------
 
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+
+# COMMAND ----------
+
 db = dbutils.widgets.get('db')
+print('DATABASE: '+db)
 
 # COMMAND ----------
 
@@ -16,6 +21,14 @@ db = dbutils.widgets.get('db')
 # COMMAND ----------
 
 # MAGIC %md ## Load data from Feature Store
+
+# COMMAND ----------
+
+# MAGIC %sql create table train as select
+# MAGIC   visit_id,
+# MAGIC   case fraud_report when 'Y' then 1 when 'N'then 0 else null end as fraud_report
+# MAGIC from visits_gold
+# MAGIC limit 10000
 
 # COMMAND ----------
 
@@ -222,8 +235,8 @@ with mlflow.start_run(run_name='XGBClassifer'):
     fn=evaluate_model,
     space=search_space,
     algo=tpe.suggest,  # algorithm controlling how hyperopt navigates the search space
-    max_evals=1,                             ### INCREASE ###
-    trials=SparkTrials(parallelism=1),       ### INCREASE ###
+    max_evals=3,                             ### INCREASE ###
+    trials=SparkTrials(parallelism=3),       ### INCREASE ###
     verbose=True
   )
 
@@ -299,14 +312,13 @@ model_name = 'VR Fraud Analytics'
 
 # COMMAND ----------
 
-for i in range(3):
-  fs.log_model(
-    wrappedModel,
-    "model",
-    flavor=mlflow.pyfunc,
-    training_set=training_set,
-    registered_model_name=model_name
-  )
+fs.log_model(
+  wrappedModel,
+  "model",
+  flavor=mlflow.pyfunc,
+  training_set=training_set,
+  registered_model_name=model_name
+)
 
 # COMMAND ----------
 

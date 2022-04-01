@@ -1,8 +1,4 @@
 # Databricks notebook source
-print('Starting test...')
-
-# COMMAND ----------
-
 from databricks_cli.sdk.api_client import ApiClient
 db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419d5466bad7d8bc58e2678', api_version='2.1')
 
@@ -19,7 +15,7 @@ f = {
     "settings": {
         "timeout_seconds": 0,
         "email_notifications": {},
-        "name": "VR Fraud",
+        "name": "VR Fraud Analytics",
         "max_concurrent_runs": 1,
         "tasks": [
             {
@@ -27,8 +23,8 @@ f = {
                 "notebook_task": {
                     "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 01: Data Engineering",
                     "base_parameters": {
-                        "db": "vr_fraud_test",
-                        "path": "/FileStore/vr/fraud/test"
+                        "db": "vr_fraud_prod",
+                        "path": "/FileStore/vr/fraud/prod"
                     }
                 },
                 "timeout_seconds": 0,
@@ -41,7 +37,7 @@ f = {
                 "notebook_task": {
                     "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 02: Data Preparation",
                     "base_parameters": {
-                        "db": "vr_fraud_test"
+                        "db": "vr_fraud_prod"
                     }
                 },
                 "timeout_seconds": 0,
@@ -58,8 +54,8 @@ f = {
                 "notebook_task": {
                     "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 04: Model Scoring",
                     "base_parameters": {
-                        "db": "vr_fraud_test",
-                        "path": "/FileStore/vr/fraud/test"
+                        "db": "vr_fraud_prod",
+                        "path": "/FileStore/vr/fraud/prod"
                     }
                 },
                 "timeout_seconds": 0,
@@ -79,38 +75,22 @@ settings = json.loads(json.dumps(f))['settings']
 
 # COMMAND ----------
 
-import datetime 
-now = datetime.datetime.now()
-now = now.strftime('%Y-%m-%d-%H-%M-%S')
+from os.path import exists
 
-# COMMAND ----------
+# Update existing job
+if exists('./job.id'):
+  with open('./job.id', 'r') as f:
+    job_id = f.read()
+  jobs.reset_job(job_id=job_id, new_settings=settings)
 
-print('Submitting run...')
-r = jobs.submit_run(
-  run_name='vr-test-fraud-'+now, 
-  tasks=settings['tasks']
-)
-run_id = r['run_id']
-
-# COMMAND ----------
-
-from time import sleep
-
-r = jobs.get_run(run_id=run_id)
-print(r['run_page_url'])
-
-wait = True if 'result_state' not in r['state'] else False
-
-wait = True
-while wait:
-  r = jobs.get_run(run_id=run_id)
-  wait = True if 'result_state' not in r['state'] else False
-  sleep(5)
-
-# COMMAND ----------
-
-result = r['state']['result_state']
-if result == 'SUCCESS':
-  print(result)
+# Create new job
 else:
-  raise Exception(result+': '+r['state']['state_message'])
+  job_id = jobs.create_job(name=settings['name'], tasks=settings['tasks'])['job_id']
+  with open('./job.id', 'w') as f:
+    f.write(str(job_id))
+  print(job_id)
+
+# COMMAND ----------
+
+from databricks_cli.sdk.service import ReposService
+repos = ReposService(db)

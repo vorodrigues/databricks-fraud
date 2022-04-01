@@ -1,19 +1,21 @@
 # Databricks notebook source
-# MAGIC %sql SET spark.databricks.delta.schema.autoMerge.enabled = False;
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+# dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
 
 # COMMAND ----------
 
 db = dbutils.widgets.get('db')
 path = dbutils.widgets.get('path')
-
 print('DATABASE: '+db)
 print('PATH: '+path)
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE DATABASE IF NOT EXISTS $db;
-# MAGIC USE $db;
+# MAGIC %sql SET spark.databricks.delta.schema.autoMerge.enabled = False
+
+# COMMAND ----------
+
+# MAGIC %sql USE $db
 
 # COMMAND ----------
 
@@ -25,14 +27,6 @@ for table in tables:
 # COMMAND ----------
 
 dbutils.fs.rm(path+"/checkpoints", True)
-
-# COMMAND ----------
-
-display(dbutils.fs.ls(path))
-
-# COMMAND ----------
-
-display(dbutils.fs.ls('/user/hive/warehouse/'+db+'.db'))
 
 # COMMAND ----------
 
@@ -101,7 +95,7 @@ bronzeDF.writeStream.format("delta") \
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT * FROM visits_bronze
+# MAGIC %sql SELECT * FROM visits_bronze LIMIT 100
 
 # COMMAND ----------
 
@@ -170,198 +164,7 @@ visits_stream.join(locations, on='atm_id', how='left') \
 
 # COMMAND ----------
 
-# MAGIC %md ### Constraints ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC Let's create some constraints to avoid bad data to flow through our pipeline and to help us identify potential issues with our data.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC ALTER TABLE visits_gold CHANGE COLUMN visit_id SET NOT NULL;
-# MAGIC ALTER TABLE visits_gold ADD CONSTRAINT tnxType CHECK (withdrawl_or_deposit IN ('deposit', 'withdrawl'));
-
-# COMMAND ----------
-
-# MAGIC %md Let's try to insert data with `null` id.
-
-# COMMAND ----------
-
-# MAGIC %sql INSERT INTO visits_gold VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, null, 'deposit', 1, null, '', '', '', 1, '', '', '', null)
-
-# COMMAND ----------
-
-# MAGIC %md Now, let's try to insert data with an invalid transaction type.
-
-# COMMAND ----------
-
-# MAGIC %sql INSERT INTO visits_gold VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 'transfer', 1, null, '', '', '', 1, '', '', '', null)
-
-# COMMAND ----------
-
-# MAGIC %md ### Schema Enforcement ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC To show you how schema enforcement works, let's try to insert a record with a new column -- `new_col` -- that doesn't match our existing Delta Lake table schema.
-
-# COMMAND ----------
-
-# MAGIC %sql INSERT INTO visits_gold SELECT *, 0 as new_col FROM visits_gold LIMIT 1
-
-# COMMAND ----------
-
-# MAGIC %md **Schema enforcement helps keep our tables clean and tidy so that we can trust the data we have stored in Delta Lake.** The writes above were blocked because the schema of the new data did not match the schema of table (see the exception details). See more information about how it works [here](https://databricks.com/blog/2019/09/24/diving-into-delta-lake-schema-enforcement-evolution.html).
-
-# COMMAND ----------
-
-# MAGIC %md ### Schema Evolution ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC If we ***want*** to update our Delta Lake table to match this data source's schema, we can do so using schema evolution. Simply enable the `autoMerge` option.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC SET spark.databricks.delta.schema.autoMerge.enabled = True;
-# MAGIC INSERT INTO visits_gold SELECT *, 0 as new_col FROM visits_gold LIMIT 10
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Full DML Support ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC 
-# MAGIC Delta Lake brings ACID transactions and full DML support to data lakes: `DELETE`, `UPDATE`, `MERGE INTO`
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC We just realized that something is wrong in the data before 2017! Let's DELETE all this data from our gold table as we don't want to have wrong value in our dataset
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC DELETE FROM visits_gold where customer_since_date < '2016-02-01';
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC With a legacy data pipeline, to insert or update a table, you must:
-# MAGIC 1. Identify the new rows to be inserted
-# MAGIC 2. Identify the rows that will be replaced (i.e. updated)
-# MAGIC 3. Identify all of the rows that are not impacted by the insert or update
-# MAGIC 4. Create a new temp based on all three insert statements
-# MAGIC 5. Delete the original table (and all of those associated files)
-# MAGIC 6. "Rename" the temp table back to the original table name
-# MAGIC 7. Drop the temp table
-# MAGIC 
-# MAGIC <img src="https://pages.databricks.com/rs/094-YMS-629/images/merge-into-legacy.gif" alt='Merge process' width=600/>
-# MAGIC 
-# MAGIC 
-# MAGIC #### INSERT or UPDATE with Delta Lake
-# MAGIC 
-# MAGIC 2-step process: 
-# MAGIC 1. Identify rows to insert or update
-# MAGIC 2. Use `MERGE`
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC MERGE INTO visits_gold AS l
-# MAGIC USING (SELECT * FROM visits_gold LIMIT 10) AS m
-# MAGIC ON l.visit_id = m.visit_id
-# MAGIC WHEN MATCHED THEN 
-# MAGIC   UPDATE SET *
-# MAGIC WHEN NOT MATCHED THEN
-# MAGIC   INSERT *
-
-# COMMAND ----------
-
-# MAGIC %md ### Time Travel ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC 
-# MAGIC Delta Lake’s time travel capabilities simplify building data pipelines for use cases including:
-# MAGIC 
-# MAGIC * Auditing Data Changes
-# MAGIC * Reproducing experiments & reports
-# MAGIC * Rollbacks
-# MAGIC 
-# MAGIC As you write into a Delta table or directory, every operation is automatically versioned.
-# MAGIC 
-# MAGIC <img src="https://github.com/risan4841/img/blob/master/transactionallogs.png?raw=true" width=250/>
-# MAGIC 
-# MAGIC You can query snapshots of your tables by:
-# MAGIC 1. **Version number**, or
-# MAGIC 2. **Timestamp.**
-# MAGIC 
-# MAGIC using Python, Scala, and/or SQL syntax; for these examples we will use the SQL syntax.  
-# MAGIC 
-# MAGIC For more information, refer to the [docs](https://docs.delta.io/latest/delta-utility.html#history), or [Introducing Delta Time Travel for Large Scale Data Lakes](https://databricks.com/blog/2019/02/04/introducing-delta-time-travel-for-large-scale-data-lakes.html)
-
-# COMMAND ----------
-
-# MAGIC %md Review Delta Lake Table History for  Auditing & Governance
-# MAGIC 
-# MAGIC All the transactions for this table are stored within this table including the initial set of insertions, update, delete, merge, and inserts with schema modification
-
-# COMMAND ----------
-
-# MAGIC %sql DESCRIBE HISTORY visits_gold
-
-# COMMAND ----------
-
-# MAGIC %md Use time travel to count records both in the latest version of the data, as well as the initial version.
-# MAGIC 
-# MAGIC As you can see, 10 new records was added.
-
-# COMMAND ----------
-
-# MAGIC %sql 
-# MAGIC SELECT 'latest' as ver, count(*) as cnt FROM visits_gold
-# MAGIC UNION
-# MAGIC SELECT 'initial' as ver, count(*) as cnt FROM visits_gold VERSION AS OF 1
-
-# COMMAND ----------
-
-# MAGIC %md Rollback table to initial version using `RESTORE`
-
-# COMMAND ----------
-
-# MAGIC %sql RESTORE visits_gold VERSION AS OF 1
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Grant Access to Database
-# MAGIC If on a Table-ACLs enabled High-Concurrency Cluster
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Note: this won't work with standard cluster. 
-# MAGIC -- DO NOT try to make it work during the demo.
-# MAGIC -- Understand what's required as of now (which cluster type) and the implications
-# MAGIC -- explore Databricks Unity Catalog initiative (go/uc) 
-# MAGIC 
-# MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.scientist@databricks.com`;
-# MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.analyst@databricks.com`
-
-# COMMAND ----------
-
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-# MAGIC %md ## Stop all the streams
+# MAGIC %md ## Stop all active streams
 
 # COMMAND ----------
 
