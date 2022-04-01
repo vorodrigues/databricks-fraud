@@ -3,7 +3,12 @@
 
 # COMMAND ----------
 
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+
+# COMMAND ----------
+
 db = dbutils.widgets.get('db')
+print('DATABASE: '+db)
 
 # COMMAND ----------
 

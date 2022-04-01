@@ -3,7 +3,15 @@
 
 # COMMAND ----------
 
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+# dbutils.widgets.text('path', 'vr_fraud_dev', 'Path')
+
+# COMMAND ----------
+
 db = dbutils.widgets.get('db')
+path = dbutils.widgets.get('path')
+print('DATABASE: '+db)
+print('PATH: '+path)
 
 # COMMAND ----------
 
@@ -62,7 +70,7 @@ preds.writeTo('preds').createOrReplace()
 # COMMAND ----------
 
 # DBTITLE 1,Save Predictions to a CSV File
-output_path = '/FileStore/vr/fraud/output'
+output_path = path+'/output'
 
 (preds
     .repartition(1)  # repartition to generate a single output file

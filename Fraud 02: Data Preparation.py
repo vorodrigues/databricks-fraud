@@ -1,5 +1,10 @@
 # Databricks notebook source
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+
+# COMMAND ----------
+
 db = dbutils.widgets.get('db')
+print('DATABASE: '+db)
 
 # COMMAND ----------
 
@@ -55,6 +60,17 @@ db = dbutils.widgets.get('db')
 
 from databricks import feature_store
 fs = feature_store.FeatureStoreClient()
+
+# COMMAND ----------
+
+# MAGIC %md For the first time, use the following code to create a Feature Table:
+# MAGIC 
+# MAGIC `fs.create_table(
+# MAGIC     name=db+".fs_atm_visits",
+# MAGIC     df=spark.table("vw_atm_visits"),
+# MAGIC     primary_keys=["visit_id"],
+# MAGIC     description="ATM Fraud features"
+# MAGIC )`
 
 # COMMAND ----------
 

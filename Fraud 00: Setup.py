@@ -36,6 +36,14 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
+# MAGIC %md ## TODO: train
+
+# COMMAND ----------
+
+# MAGIC %md ## TODO: test
+
+# COMMAND ----------
+
 # MAGIC %md # Test Tables
 
 # COMMAND ----------
@@ -81,6 +89,22 @@ spark.read.json('/FileStore/vr/fraud/raw/atm_visits') \
 # MAGIC FROM vr_fraud_dev.locations_silver AS a
 # MAGIC RIGHT JOIN json.`/FileStore/vr/fraud/test/raw/atm_visits` AS b
 # MAGIC ON a.atm_id = b.atm_id
+
+# COMMAND ----------
+
+# MAGIC %md ## Feature Store
+
+# COMMAND ----------
+
+# MAGIC %md Use notebooks 1 and 2 to create the feature table
+
+# COMMAND ----------
+
+# MAGIC %md ## test
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_test.test AS SELECT visit_id FROM vr_fraud_test.visits_gold
 
 # COMMAND ----------
 
