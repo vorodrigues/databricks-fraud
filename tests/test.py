@@ -2,8 +2,8 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("host")
-parser.add_argument("token")
+parser.add_argument("--host")
+parser.add_argument("--token")
 args = parser.parse_args()
 
 host = args.host
