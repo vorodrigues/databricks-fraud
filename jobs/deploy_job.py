@@ -11,7 +11,7 @@ token = args.token
 
 # COMMAND ----------
 
-print('Starting deployment...')
+print('Starting deploy...')
 
 # COMMAND ----------
 
