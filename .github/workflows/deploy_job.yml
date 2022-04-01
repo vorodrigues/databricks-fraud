@@ -17,12 +17,6 @@ jobs:
     
     - name: install databricks-cli
       run: pip install databricks-cli
-    
-    - name: sync repos
-      run: databricks repos update --path /Repos/victor.rodrigues@databricks.com/fraud-prod --branch prod
-      env:
-        DATABRICKS_TOKEN: ${{secrets.DATABRICKS_TOKEN}}
-        DATABRICKS_HOST: ${{secrets.DATABRICKS_HOST}}
       
     - name: deploy job
       run: cd jobs; python deploy_job.py
