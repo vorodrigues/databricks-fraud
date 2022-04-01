@@ -15,9 +15,10 @@ f = {
     "settings": {
         "existing_cluster_id": "0331-230110-ojy94y49",
         "notebook_task": {
-            "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/test-nb",
+            "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 01: Data Engineering",
             "base_parameters": {
-                "table": "atm_customers"
+                "db": "vr_fraud_dev",
+                "path": "/FileStore/vr/fraud/dev"
             }
         },
         "timeout_seconds": 0,
