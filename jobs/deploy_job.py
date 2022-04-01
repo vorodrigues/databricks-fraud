@@ -1,6 +1,6 @@
 # Databricks notebook source
 from databricks_cli.sdk.api_client import ApiClient
-db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419d5466bad7d8bc58e2678', api_version='2.1')
+db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419d5466bad7d8bc58e2678', api_version='2.0')
 
 # COMMAND ----------
 
@@ -9,11 +9,13 @@ repos = ReposService(db)
 
 # COMMAND ----------
 
+print('Updating repos...')
 repos.update_repo(id=12511536, branch='prod')
 
 # COMMAND ----------
 
 from databricks_cli.sdk.service import JobsService
+db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419d5466bad7d8bc58e2678', api_version='2.1')
 jobs = JobsService(db)
 
 # COMMAND ----------
@@ -88,12 +90,14 @@ from os.path import exists
 
 # Update existing job
 if exists('./job.id'):
+  print('Updating job...')
   with open('./job.id', 'r') as f:
     job_id = f.read()
   jobs.reset_job(job_id=job_id, new_settings=settings)
 
 # Create new job
 else:
+  print('Creating new job...')
   job_id = jobs.create_job(name=settings['name'], tasks=settings['tasks'])['job_id']
   with open('./job.id', 'w') as f:
     f.write(str(job_id))
