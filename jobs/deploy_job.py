@@ -9,7 +9,7 @@ repos = ReposService(db)
 
 # COMMAND ----------
 
-repos.update_repo(id=12510874, branch='prod')
+repos.update_repo(id=12511536, branch='prod')
 
 # COMMAND ----------
 
