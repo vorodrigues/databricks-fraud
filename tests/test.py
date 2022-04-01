@@ -1,10 +1,20 @@
 # Databricks notebook source
+# dbutils.widgets.text('host', 'https://demo.cloud.databricks.com')
+# dbutils.widgets.text('token', '')
+
+# COMMAND ----------
+
+dbutils.widgets.get('host')
+dbutils.widgets.get('token')
+
+# COMMAND ----------
+
 print('Starting test...')
 
 # COMMAND ----------
 
 from databricks_cli.sdk.api_client import ApiClient
-db = ApiClient(host='https://demo.cloud.databricks.com', token='dapi2331c6e00419d5466bad7d8bc58e2678', api_version='2.1')
+db = ApiClient(host=host, token=token, api_version='2.1')
 
 # COMMAND ----------
 
