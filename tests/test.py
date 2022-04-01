@@ -17,8 +17,8 @@ f = {
         "notebook_task": {
             "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 01: Data Engineering",
             "base_parameters": {
-                "db": "vr_fraud_dev",
-                "path": "/FileStore/vr/fraud/dev"
+                "db": "vr_fraud_test",
+                "path": "/FileStore/vr/fraud/test"
             }
         },
         "timeout_seconds": 0,
