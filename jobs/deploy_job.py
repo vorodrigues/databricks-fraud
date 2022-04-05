@@ -1,4 +1,12 @@
 # Databricks notebook source
+print('Starting deployment...')
+
+# COMMAND ----------
+
+# MAGIC %md # Parse Arguments
+
+# COMMAND ----------
+
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -11,22 +19,19 @@ token = args.token
 
 # COMMAND ----------
 
-print('Starting deployment...')
+host = 'https://e2-demo-west.cloud.databricks.com'
+token = 'dapib5589f9d0964665829aee60fa85aae5b'
+
+# COMMAND ----------
+
+# MAGIC %md # Connect to API
 
 # COMMAND ----------
 
 from databricks_cli.sdk.api_client import ApiClient
-db = ApiClient(host=host, token=token, api_version='2.0')
-
-# COMMAND ----------
-
 from databricks_cli.sdk.service import ReposService
+db = ApiClient(host=host, token=token, api_version='2.0')
 repos = ReposService(db)
-
-# COMMAND ----------
-
-print('Updating repos...')
-repos.update_repo(id=12511536, branch='prod')
 
 # COMMAND ----------
 
@@ -36,78 +41,32 @@ jobs = JobsService(db)
 
 # COMMAND ----------
 
+# MAGIC %md # Update Repos
+
+# COMMAND ----------
+
+print('Updating repos...')
+repos_id = repos.list_repos(path_prefix='/Repos/victor.rodrigues@databricks.com/fraud-prod')['repos'][0]['id']
+repos.update_repo(id=repos_id, branch='prod')
+
+# COMMAND ----------
+
+# MAGIC %md # Update Job
+
+# COMMAND ----------
+
 import json
-
-f = {
-    "settings": {
-        "timeout_seconds": 0,
-        "email_notifications": {},
-        "name": "VR Fraud Analytics",
-        "max_concurrent_runs": 1,
-        "tasks": [
-            {
-                "existing_cluster_id": "0331-230110-ojy94y49",
-                "notebook_task": {
-                    "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 01: Data Engineering",
-                    "base_parameters": {
-                        "db": "vr_fraud_prod",
-                        "path": "/FileStore/vr/fraud/prod"
-                    }
-                },
-                "timeout_seconds": 0,
-                "email_notifications": {},
-                "task_key": "data-engineering",
-                "description": ""
-            },
-            {
-                "existing_cluster_id": "0331-230110-ojy94y49",
-                "notebook_task": {
-                    "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 02: Data Preparation",
-                    "base_parameters": {
-                        "db": "vr_fraud_prod"
-                    }
-                },
-                "timeout_seconds": 0,
-                "email_notifications": {},
-                "task_key": "data-preparation",
-                "depends_on": [
-                    {
-                        "task_key": "data-engineering"
-                    }
-                ]
-            },
-            {
-                "existing_cluster_id": "0331-230110-ojy94y49",
-                "notebook_task": {
-                    "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 04: Model Scoring",
-                    "base_parameters": {
-                        "db": "vr_fraud_prod",
-                        "path": "/FileStore/vr/fraud/prod"
-                    }
-                },
-                "timeout_seconds": 0,
-                "email_notifications": {},
-                "task_key": "model-scoring",
-                "depends_on": [
-                    {
-                        "task_key": "data-preparation"
-                    }
-                ]
-            }
-        ]
-    }
-}
-
-settings = json.loads(json.dumps(f))['settings']
+with open('./job_settings', 'r') as f:
+  settings = json.load(f)['settings']
 
 # COMMAND ----------
 
 from os.path import exists
 
 # Update existing job
-if exists('./job.id'):
+if exists('./job_id'):
   print('Updating job...')
-  with open('./job.id', 'r') as f:
+  with open('./job_id', 'r') as f:
     job_id = f.read()
   jobs.reset_job(job_id=job_id, new_settings=settings)
 
@@ -115,6 +74,6 @@ if exists('./job.id'):
 else:
   print('Creating new job...')
   job_id = jobs.create_job(name=settings['name'], tasks=settings['tasks'])['job_id']
-  with open('./job.id', 'w') as f:
+  with open('./job_id', 'w') as f:
     f.write(str(job_id))
   print(job_id)

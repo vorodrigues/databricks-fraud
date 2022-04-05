@@ -24,14 +24,6 @@ print('DATABASE: '+db)
 
 # COMMAND ----------
 
-# MAGIC %sql create table train as select
-# MAGIC   visit_id,
-# MAGIC   case fraud_report when 'Y' then 1 when 'N'then 0 else null end as fraud_report
-# MAGIC from visits_gold
-# MAGIC limit 10000
-
-# COMMAND ----------
-
 from databricks import feature_store
 from databricks.feature_store import FeatureLookup
 
@@ -319,93 +311,3 @@ fs.log_model(
   training_set=training_set,
   registered_model_name=model_name
 )
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-X_train_filter = X_train_raw[X_train_raw[['year']]==2016]
-
-# COMMAND ----------
-
-from sklearn.preprocessing import OneHotEncoder
-
-
-# Handling numerical data
-num = Pipeline(steps=[
-    ('std', StandardScaler()),
-    ('imp', SimpleImputer(strategy='mean'))
-])
-
-# Handling categorical data
-cat = Pipeline(steps=[
-    ('imp', SimpleImputer(strategy='most_frequent')),
-    ('enc', OneHotEncoder())
-])
-
-# Preprocessor
-pre = Pipeline(steps=[(
-  'preprocessor', ColumnTransformer(transformers=[
-    ('num', num, numVars),
-    ('cat', cat, catVars)
-  ])
-)])
-
-# train
-model = Pipeline(steps=[
-  ('pre', pre),
-  ('clf', XGBClassifier(**params, use_label_encoder=False))
-])
-model.fit(X_train_filter, y_train)
-
-# predict
-y_prob = model.predict_proba(X_test_raw)
-
-# evaluate
-model_ap = average_precision_score(y_test, y_prob[:,1])
-model_auc = roc_auc_score(y_test, y_prob[:,1])
-
-print(model_ap, model_auc)
-
-# COMMAND ----------
-
-from pyspark.ml.feature import StringIndexer, VectorAssembler
-from pyspark.ml import Pipeline
-
-categoricals = ['bank', 'checking_savings', 'offsite_or_onsite', 'pos_capability', 'state', 'withdrawl_or_deposit']
-categoricals.remove("state")
-indexers = list(map(lambda c: StringIndexer(inputCol=c, outputCol=c+"_idx", handleInvalid="skip"), categoricals))
-featureCols = list(map(lambda c: c+"_idx", categoricals)) + ["amount", "year", "month", "day", "hour", "min"]
-
-stages = indexers + [VectorAssembler(inputCols=featureCols, outputCol="features"), StringIndexer(inputCol="fraud_report", outputCol="label")]
-
-# COMMAND ----------
-
-from pyspark.ml.classification import DecisionTreeClassifier 
-from pyspark.ml.tuning import TrainValidationSplit, ParamGridBuilder
-from pyspark.ml.evaluation import BinaryClassificationEvaluator
-
-eval = BinaryClassificationEvaluator(metricName="areaUnderROC")
-dt = DecisionTreeClassifier(labelCol="label", featuresCol="features", seed=1028)
-grid = ParamGridBuilder().addGrid(
-  dt.maxDepth, [3, 4, 5]
-).build()
-
-pipeline = Pipeline(stages=stages+[dt])
-tvs = TrainValidationSplit(seed=3923772, estimator=pipeline, trainRatio=0.7, evaluator=eval, estimatorParamMaps=grid)
-
-# COMMAND ----------
-
-model = tvs.fit(df)
-# AUROC metric for the three models that were built; max depth 5 seems best:
-model.validationMetrics

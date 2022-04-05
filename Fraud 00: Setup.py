@@ -1,4 +1,8 @@
 # Databricks notebook source
+from pyspark.sql.functions import when, col
+
+# COMMAND ----------
+
 # MAGIC %md # Dev Tables
 
 # COMMAND ----------
@@ -7,7 +11,7 @@
 
 # COMMAND ----------
 
-# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_dev;
+# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_dev
 
 # COMMAND ----------
 
@@ -16,6 +20,7 @@
 # COMMAND ----------
 
 spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_visits') \
+     .withColumn('visit_id', when((col('visit_id') == 42701999) & (col('customer_id') == 204919), 44932650).otherwise(col('visit_id'))) \
      .write.json('/FileStore/vr/fraud/dev/raw/atm_visits')
 
 # COMMAND ----------
@@ -36,11 +41,94 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
-# MAGIC %md ## TODO: train
+# MAGIC %md ## train
 
 # COMMAND ----------
 
-# MAGIC %md ## TODO: test
+spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_visits') \
+     .selectExpr("case when visit_id = 42701999 and customer_id = 204919 then 44932650 else visit_id end as visit_id", 
+                 "case fraud_report when 'Y' then 1 when 'N' then 0 else null end as fraud_report") \
+     .limit(10000) \
+     .writeTo('vr_fraud_dev.train').createOrReplace()
+
+# COMMAND ----------
+
+# MAGIC %md ## test
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_dev.test AS SELECT visit_id FROM vr_fraud_dev.train
+
+# COMMAND ----------
+
+# MAGIC %md ## Feature Store
+
+# COMMAND ----------
+
+# MAGIC %md - Use notebook 1 to generate table visits_gold
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE OR REPLACE TEMPORARY VIEW vw_atm_visits AS SELECT
+# MAGIC   visit_id,
+# MAGIC   year,
+# MAGIC   month,
+# MAGIC   day,
+# MAGIC   hour,
+# MAGIC   min,
+# MAGIC   amount,
+# MAGIC   withdrawl_or_deposit,
+# MAGIC   city_state_zip.state as state,
+# MAGIC   pos_capability,
+# MAGIC   offsite_or_onsite,
+# MAGIC   bank,
+# MAGIC   checking_savings,
+# MAGIC   datediff('2018-01-01', customer_since_date) as customer_lifetime
+# MAGIC FROM vr_fraud_dev.visits_gold
+
+# COMMAND ----------
+
+from databricks import feature_store
+fs = feature_store.FeatureStoreClient()
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC drop table if exists vr_fraud_dev.fs_atm_visits;
+# MAGIC drop table if exists vr_fraud_test.fs_atm_visits;
+# MAGIC drop table if exists vr_fraud_prod.fs_atm_visits;
+
+# COMMAND ----------
+
+fs.create_table(
+    name="vr_fraud_dev.fs_atm_visits",
+    df=spark.table("vw_atm_visits").limit(0),
+    primary_keys=["visit_id"],
+    description="ATM Fraud features [DEV]"
+)
+
+# COMMAND ----------
+
+fs.create_table(
+    name="vr_fraud_test.fs_atm_visits",
+    df=spark.table("vw_atm_visits").limit(0),
+    primary_keys=["visit_id"],
+    description="ATM Fraud features [TEST]"
+)
+
+# COMMAND ----------
+
+fs.create_table(
+    name="vr_fraud_prod.fs_atm_visits",
+    df=spark.table("vw_atm_visits").limit(0),
+    primary_keys=["visit_id"],
+    description="ATM Fraud features [PROD]"
+)
+
+# COMMAND ----------
+
+# MAGIC %md ## TODO: AutoML
 
 # COMMAND ----------
 
@@ -52,7 +140,7 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
-# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_test;
+# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_test
 
 # COMMAND ----------
 
@@ -60,7 +148,7 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
-spark.read.json('/FileStore/vr/fraud/raw/atm_visits') \
+spark.read.json('/FileStore/vr/fraud/dev/raw/atm_visits') \
      .limit(10) \
      .write.json('/FileStore/vr/fraud/test/raw/atm_visits')
 
@@ -92,19 +180,13 @@ spark.read.json('/FileStore/vr/fraud/raw/atm_visits') \
 
 # COMMAND ----------
 
-# MAGIC %md ## Feature Store
-
-# COMMAND ----------
-
-# MAGIC %md Use notebooks 1 and 2 to create the feature table
-
-# COMMAND ----------
-
 # MAGIC %md ## test
 
 # COMMAND ----------
 
-# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_test.test AS SELECT visit_id FROM vr_fraud_test.visits_gold
+spark.read.json('/FileStore/vr/fraud/test/raw/atm_visits') \
+     .select('visit_id') \
+     .writeTo('vr_fraud_test.test').createOrReplace()
 
 # COMMAND ----------
 
@@ -112,4 +194,39 @@ spark.read.json('/FileStore/vr/fraud/raw/atm_visits') \
 
 # COMMAND ----------
 
+# MAGIC %md ## Database
 
+# COMMAND ----------
+
+# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_prod
+
+# COMMAND ----------
+
+# MAGIC %md # Post-Run Validation
+
+# COMMAND ----------
+
+# MAGIC %md ## 01: Data Engineering
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select 'raw' as layer, count(*) as cnt from JSON.`/FileStore/vr/fraud/dev/raw/atm_visits`
+# MAGIC union
+# MAGIC select 'bronze' as layer, count(*) as cnt from vr_fraud_dev.visits_bronze
+# MAGIC union
+# MAGIC select 'silver' as layer, count(*) as cnt from vr_fraud_dev.visits_silver
+# MAGIC union
+# MAGIC select 'gold'as layer, count(*) as cnt from vr_fraud_dev.visits_gold
+
+# COMMAND ----------
+
+# MAGIC %sql select visit_id, count(*) as cnt from vr_fraud_dev.visits_gold group by visit_id having cnt > 1 order by cnt desc
+
+# COMMAND ----------
+
+# MAGIC %md ## 02: Data Preparation
+
+# COMMAND ----------
+
+# MAGIC %sql select 'fs'as layer, count(*) as cnt from vr_fraud_dev.fs_atm_visits
