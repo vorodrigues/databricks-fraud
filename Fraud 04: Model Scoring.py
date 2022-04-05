@@ -4,7 +4,7 @@
 # COMMAND ----------
 
 # dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
-# dbutils.widgets.text('path', 'vr_fraud_dev', 'Path')
+# dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
 
 # COMMAND ----------
 

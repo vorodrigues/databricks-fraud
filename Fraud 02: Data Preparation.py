@@ -74,15 +74,6 @@ fs = feature_store.FeatureStoreClient()
 
 # COMMAND ----------
 
-fs.create_table(
-    name=db+".fs_atm_visits",
-    df=spark.table("vw_atm_visits"),
-    primary_keys=["visit_id"],
-    description="ATM Fraud features"
-)
-
-# COMMAND ----------
-
 fs.write_table(
     name=db+".fs_atm_visits",
     df=spark.table("vw_atm_visits"),

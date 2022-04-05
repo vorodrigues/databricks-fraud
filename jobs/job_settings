@@ -1,0 +1,59 @@
+{
+    "settings": {
+        "timeout_seconds": 0,
+        "email_notifications": {},
+        "name": "VR Fraud Analytics [PROD]",
+        "max_concurrent_runs": 1,
+        "tasks": [
+            {
+                "existing_cluster_id": "0404-190023-1fkehgpg",
+                "notebook_task": {
+                    "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 01: Data Engineering",
+                    "base_parameters": {
+                        "db": "vr_fraud_prod",
+                        "path": "/FileStore/vr/fraud/prod"
+                    }
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {},
+                "task_key": "data-engineering",
+                "description": ""
+            },
+            {
+                "existing_cluster_id": "0404-190023-1fkehgpg",
+                "notebook_task": {
+                    "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 02: Data Preparation",
+                    "base_parameters": {
+                        "db": "vr_fraud_prod"
+                    }
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {},
+                "task_key": "data-preparation",
+                "depends_on": [
+                    {
+                        "task_key": "data-engineering"
+                    }
+                ]
+            },
+            {
+                "existing_cluster_id": "0404-190023-1fkehgpg",
+                "notebook_task": {
+                    "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-dev/Fraud 04: Model Scoring",
+                    "base_parameters": {
+                        "db": "vr_fraud_prod",
+                        "path": "/FileStore/vr/fraud/prod"
+                    }
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {},
+                "task_key": "model-scoring",
+                "depends_on": [
+                    {
+                        "task_key": "data-preparation"
+                    }
+                ]
+            }
+        ]
+    }
+}

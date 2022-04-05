@@ -84,18 +84,18 @@ bronzeDF = spark.readStream.format("cloudFiles") \
                 .option("cloudFiles.schemaLocation", path+"/schemas") \
                 .option("cloudFiles.schemaEvolutionMode", "addNewColumns") \
                 .option("cloudFiles.inferColumnTypes", True) \
-                .option("cloudFiles.maxFilesPerTrigger", 1) \
                 .load(path+"/raw/atm_visits")
+                #.option("cloudFiles.maxFilesPerTrigger", 1) \
 
 # Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
-        .trigger(processingTime="10 seconds") \
         .toTable("visits_bronze")
+        #.trigger(processingTime="10 seconds") \
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT * FROM visits_bronze LIMIT 100
+# MAGIC %sql SELECT * FROM visits_bronze
 
 # COMMAND ----------
 
@@ -148,14 +148,14 @@ silverDF.writeStream.format('delta') \
 # COMMAND ----------
 
 visits_stream = spark.readStream.table('visits_silver')
-locations = spark.read.table("locations_silver")
-customers = spark.read.table("customers_silver")
+locations = spark.table('locations_silver')
+customers = spark.table('customers_silver')
 
 # Join location and customer information
 visits_stream.join(locations, on='atm_id', how='left') \
              .join(customers, on='customer_id', how='left') \
              .writeStream.format('delta') \
-             .option("checkpointLocation", path+"/checkpoints/gold") \
+             .option('checkpointLocation', path+"/checkpoints/gold") \
              .toTable('visits_gold')
 
 # COMMAND ----------
