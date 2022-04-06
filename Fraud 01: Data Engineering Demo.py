@@ -11,11 +11,15 @@ print('PATH: '+path)
 
 # COMMAND ----------
 
+# MAGIC %sql USE $db
+
+# COMMAND ----------
+
 # MAGIC %sql SET spark.databricks.delta.schema.autoMerge.enabled = False
 
 # COMMAND ----------
 
-# MAGIC %sql USE $db
+from pyspark.sql.functions import col, concat_ws, lpad, to_date
 
 # COMMAND ----------
 
@@ -87,7 +91,7 @@ bronzeDF = spark.readStream.format("cloudFiles") \
                 .load(path+"/raw/atm_visits")
                 #.option("cloudFiles.maxFilesPerTrigger", 1) \
 
-# Write Stream as Delta Table
+#Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
         .toTable("visits_bronze")
@@ -126,7 +130,9 @@ bronzeDF.writeStream.format("delta") \
 #Filter on _rescued_data to select only the rows without json error, filter on visit_id not null and drop unnecessary columns
 silverDF = spark.readStream.table('visits_bronze')  \
                 .where('visit_id IS NOT NULL AND _rescued_data IS NULL')\
-                .drop('_rescued_data')
+                .drop('_rescued_data') \
+                .withColumn('date_visit', to_date(concat_ws('-', col('year'), lpad(col('month'),2,'0'), lpad(col('day'),2,'0')), 'yyyy-MM-dd')) \
+                .where('date_visit IS NOT NULL')
 
 #Write it back to your "turbine_silver" table
 silverDF.writeStream.format('delta') \
@@ -151,11 +157,11 @@ visits_stream = spark.readStream.table('visits_silver')
 locations = spark.table('locations_silver')
 customers = spark.table('customers_silver')
 
-# Join location and customer information
+#Join location and customer information
 visits_stream.join(locations, on='atm_id', how='left') \
              .join(customers, on='customer_id', how='left') \
              .writeStream.format('delta') \
-             .option('checkpointLocation', path+"/checkpoints/gold") \
+             .option('checkpointLocation', path+'/checkpoints/gold') \
              .toTable('visits_gold')
 
 # COMMAND ----------
@@ -339,4 +345,5 @@ visits_stream.join(locations, on='atm_id', how='left') \
 # COMMAND ----------
 
 for s in spark.streams.active:
+  s.processAllAvailable()
   s.stop()
