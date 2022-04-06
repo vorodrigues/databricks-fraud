@@ -167,12 +167,3 @@ silverDF.join(locations, on='atm_id', how='left') \
 # COMMAND ----------
 
 # MAGIC %sql SELECT * FROM visits_gold LIMIT 100
-
-# COMMAND ----------
-
-# MAGIC %md ## Stop all active streams
-
-# COMMAND ----------
-
-for s in spark.streams.active:
-  s.stop()
