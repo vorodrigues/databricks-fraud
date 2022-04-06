@@ -339,12 +339,3 @@ silverDF.join(locations, on='atm_id', how='left') \
 # MAGIC 
 # MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.scientist@databricks.com`;
 # MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.analyst@databricks.com`
-
-# COMMAND ----------
-
-# MAGIC %md ## Stop all active streams
-
-# COMMAND ----------
-
-for s in spark.streams.active:
-  s.stop()
