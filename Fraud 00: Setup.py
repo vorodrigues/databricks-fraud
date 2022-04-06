@@ -202,6 +202,39 @@ spark.read.json('/FileStore/vr/fraud/test/raw/atm_visits') \
 
 # COMMAND ----------
 
+# MAGIC %md ## atm_visits.json
+
+# COMMAND ----------
+
+spark.read.json('/FileStore/vr/fraud/dev/raw/atm_visits') \
+     .write.json('/FileStore/vr/fraud/prod/raw/atm_visits')
+
+# COMMAND ----------
+
+# MAGIC %md ## customers_silver
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_prod.customers_silver AS SELECT * FROM vr_fraud_dev.customers_silver
+
+# COMMAND ----------
+
+# MAGIC %md ## locations_silver
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_prod.locations_silver AS SELECT * FROM vr_fraud_dev.locations_silver
+
+# COMMAND ----------
+
+# MAGIC %md ## test
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_prod.test AS SELECT * FROM vr_fraud_dev.test
+
+# COMMAND ----------
+
 # MAGIC %md # Post-Run Validation
 
 # COMMAND ----------
