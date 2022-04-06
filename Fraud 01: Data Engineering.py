@@ -93,6 +93,7 @@ bronzeDF = spark.readStream.format("cloudFiles") \
 # Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
+        .trigger(once=True) \
         .toTable("visits_bronze")
 
 # COMMAND ----------
@@ -126,7 +127,7 @@ bronzeDF.writeStream.format("delta") \
 #Cleanup the silver table
 #Our bronze table might have some malformed records.
 #Filter on _rescued_data to select only the rows without json error, filter on visit_id not null and drop unnecessary columns
-silverDF = spark.readStream.table('visits_bronze')  \
+silverDF = bronzeDF  \
                 .where('visit_id IS NOT NULL AND _rescued_data IS NULL')\
                 .drop('_rescued_data') \
                 .withColumn('date_visit', to_date(concat_ws('-', col('year'), lpad(col('month'),2,'0'), lpad(col('day'),2,'0')), 'yyyy-MM-dd')) \
@@ -135,6 +136,7 @@ silverDF = spark.readStream.table('visits_bronze')  \
 #Write it back to your "turbine_silver" table
 silverDF.writeStream.format('delta') \
         .option("checkpointLocation", path+"/checkpoints/silver") \
+        .trigger(once=True) \
         .toTable("visits_silver")
 
 # COMMAND ----------
@@ -151,16 +153,16 @@ silverDF.writeStream.format('delta') \
 
 # COMMAND ----------
 
-visits_stream = spark.readStream.table('visits_silver')
 locations = spark.table('locations_silver')
 customers = spark.table('customers_silver')
 
 #Join location and customer information
-visits_stream.join(locations, on='atm_id', how='left') \
-             .join(customers, on='customer_id', how='left') \
-             .writeStream.format('delta') \
-             .option('checkpointLocation', path+'/checkpoints/gold') \
-             .toTable('visits_gold')
+silverDF.join(locations, on='atm_id', how='left') \
+        .join(customers, on='customer_id', how='left') \
+        .writeStream.format('delta') \
+        .option('checkpointLocation', path+'/checkpoints/gold') \
+        .trigger(once=True) \
+        .toTable('visits_gold')
 
 # COMMAND ----------
 
@@ -173,5 +175,4 @@ visits_stream.join(locations, on='atm_id', how='left') \
 # COMMAND ----------
 
 for s in spark.streams.active:
-  s.processAllAvailable()
   s.stop()
