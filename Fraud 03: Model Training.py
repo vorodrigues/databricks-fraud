@@ -75,7 +75,7 @@ from category_encoders.woe import WOEEncoder
 set_config(display="diagram")
 
 # Separate variables
-numVars = ['hour','amount','customer_lifetime']
+numVars = ['day', 'hour','amount','customer_lifetime']
 catVars = ['bank', 'checking_savings', 'offsite_or_onsite', 'pos_capability', 'state', 'withdrawl_or_deposit']
 
 # Handling numerical data
