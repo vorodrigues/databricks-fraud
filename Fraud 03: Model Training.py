@@ -123,7 +123,7 @@ display(pre)
 # COMMAND ----------
 
 from xgboost import XGBClassifier
-from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.metrics import roc_auc_score
 
 def evaluate_model(hyperopt_params):
   
@@ -148,18 +148,19 @@ def evaluate_model(hyperopt_params):
   model.fit(X_train_input, y_train_input)
   
   # predict
-  y_prob = model.predict_proba(X_test_input)
+  prob_train = model.predict_proba(X_train_input)
+  prob_test = model.predict_proba(X_test_input)
   
   # evaluate
-  model_ap = average_precision_score(y_test_input, y_prob[:,1])
-  model_auc = roc_auc_score(y_test_input, y_prob[:,1])
+  auc_train = roc_auc_score(y_train_input, prob_train[:,1])
+  auc_test = roc_auc_score(y_test_input, prob_test[:,1])
   
   # log model
-  mlflow.log_metric('avg precision', model_ap)
-  mlflow.log_metric('auc', model_auc)
+  mlflow.log_metric('train_auc', auc_train)
+  mlflow.log_metric('test_auc', auc_test)
   
   # invert metric for hyperopt
-  loss = -1 * model_ap  
+  loss = -1 * auc_test  
   
   # return results
   return {'loss': loss, 'status': STATUS_OK}

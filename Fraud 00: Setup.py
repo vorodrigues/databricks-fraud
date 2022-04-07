@@ -3,7 +3,7 @@ from pyspark.sql.functions import when, col
 
 # COMMAND ----------
 
-# MAGIC %md # Dev Tables
+# MAGIC %md # Dev
 
 # COMMAND ----------
 
@@ -188,7 +188,7 @@ df.writeTo('vr_fraud_dev.train_dataset').createOrReplace()
 
 # COMMAND ----------
 
-# MAGIC %md # Test Tables
+# MAGIC %md # Test
 
 # COMMAND ----------
 
@@ -246,7 +246,7 @@ spark.read.json('/FileStore/vr/fraud/test/raw/atm_visits') \
 
 # COMMAND ----------
 
-# MAGIC %md # Prod Tables
+# MAGIC %md # Prod
 
 # COMMAND ----------
 
