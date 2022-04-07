@@ -274,20 +274,21 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
   model.fit(X_train_raw, y_train)
   
   # predict
-  y_prob = model.predict_proba(X_test_raw)
+  prob_train = model.predict_proba(X_train_raw)
+  prob_test = model.predict_proba(X_test_raw)
   
   # evaluate
-  model_ap = average_precision_score(y_test, y_prob[:,1])
-  model_auc = roc_auc_score(y_test, y_prob[:,1])
+  auc_train = roc_auc_score(y_train, prob_train[:,1])
+  auc_test = roc_auc_score(y_test, prob_test[:,1])
 
   # log model
   wrappedModel = SklearnModelWrapper(model)
   signature = infer_signature(X_train_raw, y_prob)
   mlflow.pyfunc.log_model(python_model=wrappedModel, artifact_path='model', signature=signature)
-  mlflow.log_metric('avg precision', model_ap)
-  mlflow.log_metric('auc', model_auc)
+  mlflow.log_metric('train_auc', auc_train)
+  mlflow.log_metric('test_auc', auc_test)
 
-  print('Model logged under run_id "{0}" with AP score of {1:.5f}'.format(run_id, model_ap))
+  print('Model logged under run_id "{0}" with AUC score of {1:.5f}'.format(run_id, auc_test))
   display(model)
 
 # COMMAND ----------
