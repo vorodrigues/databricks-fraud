@@ -272,8 +272,8 @@ spark.read.json('/FileStore/vr/fraud/dev/raw/atm_visits') \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select 'raw' as layer, count(*) as cnt from JSON.`/FileStore/vr/fraud/dev/raw/atm_visits`
-# MAGIC union
+# MAGIC --select 'raw' as layer, count(*) as cnt from JSON.`/FileStore/vr/fraud/dev/raw/atm_visits`
+# MAGIC --union
 # MAGIC select 'bronze' as layer, count(*) as cnt from vr_fraud_dev.visits_bronze
 # MAGIC union
 # MAGIC select 'silver' as layer, count(*) as cnt from vr_fraud_dev.visits_silver

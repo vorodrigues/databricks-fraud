@@ -20,7 +20,7 @@ print('DATABASE: '+db)
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT COUNT(1), city_state_zip.state state FROM visits_gold WHERE year = 2016 AND fraud_report = 'Y' GROUP BY state HAVING state IS NOT NULL
+# MAGIC %sql SELECT COUNT(1), state FROM visits_gold WHERE year = 2016 AND fraud_report = 'Y' GROUP BY state HAVING state IS NOT NULL
 
 # COMMAND ----------
 
@@ -42,7 +42,7 @@ print('DATABASE: '+db)
 # MAGIC   min,
 # MAGIC   amount,
 # MAGIC   withdrawl_or_deposit,
-# MAGIC   city_state_zip.state as state,
+# MAGIC   state,
 # MAGIC   pos_capability,
 # MAGIC   offsite_or_onsite,
 # MAGIC   bank,

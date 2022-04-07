@@ -91,19 +91,18 @@ bronzeDF = spark.readStream.format("cloudFiles") \
                 .option("cloudFiles.schemaLocation", path+"/schemas") \
                 .option("cloudFiles.schemaEvolutionMode", "addNewColumns") \
                 .option("cloudFiles.inferColumnTypes", True) \
+                .option("cloudFiles.maxFilesPerTrigger", 1) \
                 .load(path+"/raw/atm_visits")
-                #.option("cloudFiles.maxFilesPerTrigger", 1) \
 
 #Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
-        .trigger(once=True) \
+        .trigger(processingTime="2 seconds") \
         .toTable("visits_bronze")
-        #.trigger(processingTime="10 seconds") \
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT * FROM visits_bronze
+display(bronzeDF.groupBy('year', 'month', 'fraud_report').sum('amount'))
 
 # COMMAND ----------
 
@@ -132,16 +131,15 @@ bronzeDF.writeStream.format("delta") \
 #Cleanup the silver table
 #Our bronze table might have some malformed records.
 #Filter on _rescued_data to select only the rows without json error, filter on visit_id not null and drop unnecessary columns
-silverDF = bronzeDF  \
-                .where('visit_id IS NOT NULL AND _rescued_data IS NULL')\
-                .drop('_rescued_data') \
-                .withColumn('date_visit', to_date(concat_ws('-', col('year'), lpad(col('month'),2,'0'), lpad(col('day'),2,'0')), 'yyyy-MM-dd')) \
-                .where('date_visit IS NOT NULL')
+silverDF = bronzeDF.where('visit_id IS NOT NULL AND _rescued_data IS NULL') \
+                   .drop('_rescued_data') \
+                   .withColumn('date_visit', to_date(concat_ws('-', col('year'), lpad(col('month'),2,'0'), lpad(col('day'),2,'0')), 'yyyy-MM-dd')) \
+                   .where('date_visit IS NOT NULL')
 
 #Write it back to your "turbine_silver" table
 silverDF.writeStream.format('delta') \
         .option("checkpointLocation", path+"/checkpoints/silver") \
-        .trigger(once=True) \
+        .trigger(processingTime="2 seconds") \
         .toTable("visits_silver")
 
 # COMMAND ----------
@@ -162,12 +160,17 @@ locations = spark.table('locations_silver')
 customers = spark.table('customers_silver')
 
 #Join location and customer information
-silverDF.join(locations, on='atm_id', how='left') \
-        .join(customers, on='customer_id', how='left') \
-        .writeStream.format('delta') \
-        .option('checkpointLocation', path+'/checkpoints/gold') \
-        .trigger(once=True) \
-        .toTable('visits_gold')
+goldDF = silverDF.join(locations, on='atm_id', how='left') \
+                 .join(customers, on='customer_id', how='left') \
+                 .withColumn('state', col('city_state_zip.state')) \
+                 .withColumn('city', col('city_state_zip.city')) \
+                 .withColumn('zip', col('city_state_zip.zip')) \
+                 .drop('city_state_zip')
+
+goldDF.writeStream.format('delta') \
+      .option('checkpointLocation', path+'/checkpoints/gold') \
+      .trigger(processingTime="2 seconds") \
+      .toTable('visits_gold')
 
 # COMMAND ----------
 
