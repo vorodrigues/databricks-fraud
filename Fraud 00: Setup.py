@@ -61,11 +61,11 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
-# MAGIC %md ## Feature Store
-
-# COMMAND ----------
-
-# MAGIC %md - Use notebook 1 to generate table visits_gold
+# MAGIC %md 
+# MAGIC ## Feature Store
+# MAGIC <br>
+# MAGIC 
+# MAGIC - Use notebook 1 to generate table visits_gold
 
 # COMMAND ----------
 
@@ -128,7 +128,35 @@ fs.create_table(
 
 # COMMAND ----------
 
-# MAGIC %md ## TODO: AutoML
+# MAGIC %md ## AutoML 
+# MAGIC <br>
+# MAGIC 
+# MAGIC - Use notebook 2 to generate feature table
+
+# COMMAND ----------
+
+from databricks import feature_store
+from databricks.feature_store import FeatureLookup
+
+fs = feature_store.FeatureStoreClient()
+
+feature_lookups = [
+    FeatureLookup(
+      table_name = 'vr_fraud_dev.fs_atm_visits',
+      feature_names = None,
+      lookup_key = ['visit_id']
+    )
+]
+
+training_set = fs.create_training_set(
+  df = spark.table('vr_fraud_dev.train'),
+  feature_lookups = feature_lookups,
+  label = 'fraud_report',
+  exclude_columns = ['visit_id']
+)
+df = training_set.load_df()
+
+df.writeTo('vr_fraud_dev.train_dataset').createOrReplace()
 
 # COMMAND ----------
 

@@ -41,7 +41,7 @@ dbutils.fs.rm(path+"/checkpoints", True)
 # DBTITLE 0,Overview
 # MAGIC %md
 # MAGIC 
-# MAGIC *** According to the Secret Service, the crime is responsible for about $350,000 of monetary losses each day in the United States and is considered to be the number one ATM-related crime. Trade group Global ATM Security Alliance estimates that skimming costs the U.S.-banking industry about $60 million a year.***
+# MAGIC **According to the Secret Service, the crime is responsible for about $350,000 of monetary losses each day in the United States and is considered to be the number one ATM-related crime. Trade group Global ATM Security Alliance estimates that skimming costs the U.S.-banking industry about $60 million a year.**
 # MAGIC 
 # MAGIC The easiest way that companies identify atm fraud is by recognizing a break in spending patterns.  For example, if you live in Wichita, KS and suddenly your card is used to buy something in Bend, OR – that may tip the scales in favor of possible fraud, and your credit card company might decline the charges and ask you to verify them.
 # MAGIC 
@@ -52,6 +52,9 @@ dbutils.fs.rm(path+"/checkpoints", True)
 # MAGIC   * Uses a machine learning implementation to detect ATM fraud   
 # MAGIC * This demo...  
 # MAGIC   * demonstrates a ATM fraud detection workflow.  We use dataset is internally mocked up data.
+# MAGIC <br><br>
+# MAGIC 
+# MAGIC <img src="https://databricks.com/wp-content/uploads/2020/09/delta-lake-medallion-model-scaled.jpg" width=1012/>
 
 # COMMAND ----------
 

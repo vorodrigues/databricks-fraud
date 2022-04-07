@@ -70,7 +70,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn import set_config
 from category_encoders.woe import WOEEncoder
+set_config(display="diagram")
 
 # Separate variables
 numVars = ['hour','amount','customer_lifetime']
@@ -100,11 +102,7 @@ pre = Pipeline(steps=[(
 X_train = pre.fit_transform(X_train_raw, y_train)
 X_test = pre.transform(X_test_raw)
 
-# COMMAND ----------
-
-from sklearn import set_config
-set_config(display="diagram")
-pre
+display(pre)
 
 # COMMAND ----------
 
@@ -226,9 +224,9 @@ with mlflow.start_run(run_name='XGBClassifer'):
   argmin = fmin(
     fn=evaluate_model,
     space=search_space,
-    algo=tpe.suggest,  # algorithm controlling how hyperopt navigates the search space
-    max_evals=3,                             ### INCREASE ###
-    trials=SparkTrials(parallelism=3),       ### INCREASE ###
+    algo=tpe.suggest,
+    max_evals=50,
+    trials=SparkTrials(parallelism=5),
     verbose=True
   )
 
@@ -289,10 +287,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
   mlflow.log_metric('auc', model_auc)
 
   print('Model logged under run_id "{0}" with AP score of {1:.5f}'.format(run_id, model_ap))
-
-# COMMAND ----------
-
-model
+  display(model)
 
 # COMMAND ----------
 
