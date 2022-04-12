@@ -3,7 +3,7 @@
 
 # COMMAND ----------
 
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
 
 # COMMAND ----------
 
@@ -17,6 +17,12 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 03: Model Training
+# MAGIC 
+# MAGIC The next step is to train lots of different models using different algorithms and parameters in search for the one that optimally solves our business problem.
+# MAGIC 
+# MAGIC That's where the **Spark** + **HyperOpt** + **MLflow** framework can be leveraged to easily distribute the training proccess across a cluster, efficiently optimize hyperparameters and track all experiments in order to quickly evaluate many models, choose the best one and guarantee its reproducibility.<br><br>
+# MAGIC 
+# MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_2.jpg)
 
 # COMMAND ----------
 
@@ -116,7 +122,7 @@ display(pre)
 # MAGIC 
 # MAGIC Using hyperopt, we can automate this task, providing the hyperopt framework with a range of potential values to explore.  Calling a function which trains the model and returns an evaluation metric, hyperopt can through the available search space to towards an optimum combination of values.
 # MAGIC 
-# MAGIC For model evaluation, we will be using the average precision (AP) score which increases towards 1.0 as the model improves.  Because hyperopt recognizes improvements as our evaluation metric declines, we will use -1 * the AP score as our loss metric within the framework. 
+# MAGIC For model evaluation, we will be using the Area Under the Curve (AUC) score which increases towards 1.0 as the model improves.  Because hyperopt recognizes improvements as our evaluation metric declines, we will use `-1 * AUC` as our loss metric within the framework. 
 # MAGIC 
 # MAGIC Putting this all together, we might arrive at model training and evaluation function as follows:
 
@@ -214,7 +220,7 @@ search_space = {
 
 # MAGIC %md ### Run Experiment
 # MAGIC 
-# MAGIC The remainder of the model evaluation function is fairly straightforward.  We simply train and evaluate our model and return our loss value, *i.e.* -1 * AP Score, as part of a dictionary interpretable by hyperopt.  Based on returned values, hyperopt will generate a new set of hyperparameter values from within the search space definition with which it will attempt to improve our metric. We will limit the number of hyperopt evaluations to 250 simply based on a few trail runs we performed (not shown).  The larger the potential search space and the degree to which the model (in combination with the training dataset) responds to different hyperparameter combinations determines how many iterations are required for hyperopt to arrive at locally optimal values.  You can examine the output of the hyperopt run to see how our loss metric slowly improves over the course of each of these evaluations:
+# MAGIC The remainder of the model evaluation function is fairly straightforward.  We simply train and evaluate our model and return our loss value, *i.e.* `-1 * AUC`, as part of a dictionary interpretable by hyperopt.  Based on returned values, hyperopt will generate a new set of hyperparameter values from within the search space definition with which it will attempt to improve our metric. We will limit the number of hyperopt evaluations to 250 simply based on a few trail runs we performed (not shown).  The larger the potential search space and the degree to which the model (in combination with the training dataset) responds to different hyperparameter combinations determines how many iterations are required for hyperopt to arrive at locally optimal values.  You can examine the output of the hyperopt run to see how our loss metric slowly improves over the course of each of these evaluations:
 
 # COMMAND ----------
 
@@ -262,8 +268,8 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
   if 'min_child_weight' in params: params['min_child_weight']=int(params['min_child_weight'])
   if 'max_delta_step' in params: params['max_delta_step']=int(params['max_delta_step'])
   if 'scale_pos_weight' in params: params['scale_pos_weight']=int(params['scale_pos_weight'])    
-  params['tree_method']='hist'        # modified for CPU deployment
-  params['predictor']='cpu_predictor' # modified for CPU deployment
+  params['tree_method']='hist'
+  params['predictor']='cpu_predictor'
   mlflow.log_params(params)
   
   # train
@@ -294,6 +300,12 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 # COMMAND ----------
 
 # MAGIC %md ## Register Champion Model
+# MAGIC 
+# MAGIC After choosing a model that best fits our needs, we can then go ahead and kick off its operationalization proccess.
+# MAGIC 
+# MAGIC The first step is to register it to the **Model Registry**, where we can version, manage its life cycle with an workflow and track/audit all changes.<br><br>
+# MAGIC 
+# MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_3.jpg)
 
 # COMMAND ----------
 
