@@ -52,11 +52,11 @@ dbutils.fs.rm(path+"/checkpoints", True)
 
 # MAGIC %md # Fraud 01: Data Engineering
 # MAGIC 
-# MAGIC The first step to prevent such ATM fraud is to make sure we can ingest, clean and organize our data in a **performant**, **reliable** and **cost efficient** manner.
+# MAGIC The first step to prevent **ATM fraud** is to make sure we can ingest, clean and organize our data in a **performant**, **reliable** and **cost efficient** manner.
 # MAGIC 
-# MAGIC Here we are going to create a streaming pipeline to increasingly improve our data quality while moving through different layers of our **Lakehouse** and deliver it to be consumed by BI reports and ML models.
+# MAGIC Here we are going to create a streaming pipeline to increasingly improve our data quality while moving through different layers of our **Lakehouse** and deliver it to be consumed by **BI** reports and **ML** models.
 # MAGIC 
-# MAGIC **Delta Lake** is a key enabler to support this architecture, reducing the work required by data engineers to develop and maintain these pipelines.<br><br>
+# MAGIC **Delta Lake** is a key enabler of this architecture, reducing the work required by data engineers to develop and maintain these pipelines.<br><br>
 # MAGIC 
 # MAGIC <img src="https://databricks.com/wp-content/uploads/2020/09/delta-lake-medallion-model-scaled.jpg" width=1012/>
 
