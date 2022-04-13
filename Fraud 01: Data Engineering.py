@@ -62,23 +62,6 @@ dbutils.fs.rm(path+"/checkpoints", True)
 
 # COMMAND ----------
 
-# DBTITLE 0,Overview
-# MAGIC %md
-# MAGIC 
-# MAGIC *** According to the Secret Service, the crime is responsible for about $350,000 of monetary losses each day in the United States and is considered to be the number one ATM-related crime. Trade group Global ATM Security Alliance estimates that skimming costs the U.S.-banking industry about $60 million a year.***
-# MAGIC 
-# MAGIC The easiest way that companies identify atm fraud is by recognizing a break in spending patterns.  For example, if you live in Wichita, KS and suddenly your card is used to buy something in Bend, OR – that may tip the scales in favor of possible fraud, and your credit card company might decline the charges and ask you to verify them.
-# MAGIC 
-# MAGIC  
-# MAGIC ![Databricks for Credit Card Fraud](https://s3.us-east-2.amazonaws.com/databricks-knowledge-repo-images/ML/fighting_atm_fraud/credit_card_with_padlock.jpg)  
-# MAGIC * [**ATM Fraud Analytics**](https://www.csoonline.com/article/2124891/fraud-prevention/atm-skimming--how-to-recognize-card-fraud.html) is the use of data analytics and machine learning to detect ATM fraud and is...  
-# MAGIC   * Built on top of Databricks Platform
-# MAGIC   * Uses a machine learning implementation to detect ATM fraud   
-# MAGIC * This demo...  
-# MAGIC   * demonstrates a ATM fraud detection workflow.  We use dataset is internally mocked up data.
-
-# COMMAND ----------
-
 # MAGIC %md ## Examine the Data
 # MAGIC There are several tables: customer data, customer ATM visits, and ATM locations; for later, a database of criminal mugshots!
 
