@@ -1,5 +1,5 @@
 # Databricks notebook source
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
 
 # COMMAND ----------
 
@@ -13,6 +13,14 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 02: Data Preparation
+# MAGIC 
+# MAGIC Now that data has been ingested, cleaned and organized, data scientists can explore it to understand patterns and gain insigths.
+# MAGIC 
+# MAGIC Then they can leverage this knowledge to engineer new features and improve existing ones.
+# MAGIC 
+# MAGIC And, finally, load them to a Feature Store to share and manage those variables.<br><br>
+# MAGIC 
+# MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_1.jpg)
 
 # COMMAND ----------
 
@@ -55,6 +63,14 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md ## Load Feature Store
+# MAGIC 
+# MAGIC Once our features are ready, we'll save them in Databricks Feature Store. Under the hood, features store are backed by a **Delta Lake** table and co-designed with **MLflow**.
+# MAGIC 
+# MAGIC This will allow **discoverability** and **reusability** of our feature accross our organization, increasing team efficiency.
+# MAGIC 
+# MAGIC Feature store will bring **traceability** and **governance** in our deployment, knowing which model is dependent of which set of features.<br><br>
+# MAGIC 
+# MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/fs.jpg)
 
 # COMMAND ----------
 
@@ -79,3 +95,22 @@ fs.write_table(
     df=spark.table("vw_atm_visits"),
     mode="overwrite"
 )
+
+# COMMAND ----------
+
+# MAGIC %md-sandbox
+# MAGIC 
+# MAGIC # Next Step: AutoML
+# MAGIC ## Accelerating Fraud model creation using Databricks Auto-ML
+# MAGIC ### A glass-box solution that empowers data teams without taking away control
+# MAGIC 
+# MAGIC Databricks simplify model creation and MLOps. However, bootstraping new ML projects can still be long and inefficient. 
+# MAGIC 
+# MAGIC Instead of creating the same boterplate for each new project, Databricks Auto-ML can automatically generate state of the art models for classification, regression, and forecast.
+# MAGIC 
+# MAGIC 
+# MAGIC <img width="1000" src="https://github.com/QuentinAmbard/databricks-demo/raw/main/retail/resources/images/auto-ml-full.png"/>
+# MAGIC 
+# MAGIC Models can be directly deployed, or instead leverage generated notebooks to boostrap projects with best-practices, saving you weeks of efforts.
+# MAGIC 
+# MAGIC While this is done using the UI, you can also leverage the [Python API](https://docs.databricks.com/applications/machine-learning/automl.html#automl-python-api-1)

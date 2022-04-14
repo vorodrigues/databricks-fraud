@@ -3,7 +3,7 @@
 
 # COMMAND ----------
 
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
 # dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
 
 # COMMAND ----------
@@ -24,6 +24,12 @@ print('PATH: '+path)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 04: Model Scoring
+# MAGIC 
+# MAGIC Finally, the model can be scored on a new dataset to get predictions.
+# MAGIC 
+# MAGIC Models can be deployed as a batch, stream or real time proccess.<br><br>
+# MAGIC 
+# MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_4.jpg)
 
 # COMMAND ----------
 

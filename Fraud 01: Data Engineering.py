@@ -1,5 +1,5 @@
 # Databricks notebook source
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Databse')
+# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
 # dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
 
 # COMMAND ----------
@@ -34,14 +34,9 @@ dbutils.fs.rm(path+"/checkpoints", True)
 
 # COMMAND ----------
 
-# MAGIC %md # Fraud 01: Data Engineering
-
-# COMMAND ----------
-
-# DBTITLE 0,Overview
-# MAGIC %md
+# MAGIC %md # ATM Fraud Analytics
 # MAGIC 
-# MAGIC *** According to the Secret Service, the crime is responsible for about $350,000 of monetary losses each day in the United States and is considered to be the number one ATM-related crime. Trade group Global ATM Security Alliance estimates that skimming costs the U.S.-banking industry about $60 million a year.***
+# MAGIC **According to the Secret Service, the crime is responsible for about $350,000 of monetary losses each day in the United States and is considered to be the number one ATM-related crime. Trade group Global ATM Security Alliance estimates that skimming costs the U.S.-banking industry about $60 million a year.**
 # MAGIC 
 # MAGIC The easiest way that companies identify atm fraud is by recognizing a break in spending patterns.  For example, if you live in Wichita, KS and suddenly your card is used to buy something in Bend, OR – that may tip the scales in favor of possible fraud, and your credit card company might decline the charges and ask you to verify them.
 # MAGIC 
@@ -52,6 +47,18 @@ dbutils.fs.rm(path+"/checkpoints", True)
 # MAGIC   * Uses a machine learning implementation to detect ATM fraud   
 # MAGIC * This demo...  
 # MAGIC   * demonstrates a ATM fraud detection workflow.  We use dataset is internally mocked up data.
+
+# COMMAND ----------
+
+# MAGIC %md # Fraud 01: Data Engineering
+# MAGIC 
+# MAGIC The first step to prevent **ATM fraud** is to make sure we can ingest, clean and organize our data in a **performant**, **reliable** and **cost efficient** manner.
+# MAGIC 
+# MAGIC Here we are going to create a streaming pipeline to increasingly improve our data quality while moving through different layers of our **Lakehouse** and deliver it to be consumed by **BI** reports and **ML** models.
+# MAGIC 
+# MAGIC **Delta Lake** is a key enabler of this architecture, reducing the work required by data engineers to develop and maintain these pipelines.<br><br>
+# MAGIC 
+# MAGIC <img src="https://databricks.com/wp-content/uploads/2020/09/delta-lake-medallion-model-scaled.jpg" width=1012/>
 
 # COMMAND ----------
 

@@ -3,7 +3,7 @@ from pyspark.sql.functions import when, col
 
 # COMMAND ----------
 
-# MAGIC %md # Dev Tables
+# MAGIC %md # Dev
 
 # COMMAND ----------
 
@@ -38,26 +38,6 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 # COMMAND ----------
 
 # MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_dev.locations_silver AS SELECT * FROM parquet.`/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_locations`
-
-# COMMAND ----------
-
-# MAGIC %md ## train
-
-# COMMAND ----------
-
-spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_visits') \
-     .selectExpr("case when visit_id = 42701999 and customer_id = 204919 then 44932650 else visit_id end as visit_id", 
-                 "case fraud_report when 'Y' then 1 when 'N' then 0 else null end as fraud_report") \
-     .limit(10000) \
-     .writeTo('vr_fraud_dev.train').createOrReplace()
-
-# COMMAND ----------
-
-# MAGIC %md ## test
-
-# COMMAND ----------
-
-# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_dev.test AS SELECT visit_id FROM vr_fraud_dev.train
 
 # COMMAND ----------
 
@@ -128,6 +108,54 @@ fs.create_table(
 
 # COMMAND ----------
 
+# MAGIC %md ## train
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC create or replace table vr_fraud_dev.tmp as select
+# MAGIC   *,
+# MAGIC   0.05 * (1 + 0.2 * (rand()-0.5)/0.5) * tx_pos * tx_site * tx_withdrawl * tx_acc * tx_day * tx_hour * tx_amount as tx_final
+# MAGIC from (
+# MAGIC   select
+# MAGIC     *,
+# MAGIC     case pos_capability when 'swipe'           then 1 + 0.05 * rand() else 1 end as tx_pos,
+# MAGIC     case offsite_or_onsite when 'offsite'      then 1 + 0.05 * rand() else 1 end as tx_site,
+# MAGIC     case withdrawl_or_deposit when 'withdrawl' then 1 + 0.05 * rand() else 1 end as tx_withdrawl,
+# MAGIC     case checking_savings when 'chk'           then 1 + 0.05 * rand() else 1 end as tx_acc,
+# MAGIC     case when day <= 5 or 28 <= day            then 1 + 0.05 * rand() else 1 end as tx_day,
+# MAGIC     case when hour <= 6 or hour <= 23          then 1 + 0.05 * rand() else 1 end as tx_hour,
+# MAGIC     case when amount > 80                      then 1 + 0.05 * (amount - 80) / 60 else 1 end as tx_amount
+# MAGIC   from vr_fraud_dev.fs_atm_visits
+# MAGIC   limit 10000
+# MAGIC )
+
+# COMMAND ----------
+
+# MAGIC %sql select avg(case when tx_final > 0.0654 then 1 else 0 end) from vr_fraud_dev.tmp
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC create or replace table vr_fraud_dev.train as select
+# MAGIC   visit_id,
+# MAGIC   case when tx_final > 0.0654 then 1 else 0 end as fraud_report
+# MAGIC from vr_fraud_dev.tmp
+
+# COMMAND ----------
+
+# MAGIC %md - Use AutoML to validate if table is ok
+
+# COMMAND ----------
+
+# MAGIC %md ## test
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_dev.test AS SELECT visit_id FROM vr_fraud_dev.train
+
+# COMMAND ----------
+
 # MAGIC %md ## AutoML 
 # MAGIC <br>
 # MAGIC 
@@ -160,7 +188,7 @@ df.writeTo('vr_fraud_dev.train_dataset').createOrReplace()
 
 # COMMAND ----------
 
-# MAGIC %md # Test Tables
+# MAGIC %md # Test
 
 # COMMAND ----------
 
@@ -218,7 +246,7 @@ spark.read.json('/FileStore/vr/fraud/test/raw/atm_visits') \
 
 # COMMAND ----------
 
-# MAGIC %md # Prod Tables
+# MAGIC %md # Prod
 
 # COMMAND ----------
 
