@@ -34,6 +34,10 @@ dbutils.fs.rm(path+"/checkpoints", True)
 
 # COMMAND ----------
 
+print('hello')
+
+# COMMAND ----------
+
 # DBTITLE 0,Overview
 # MAGIC %md # ATM Fraud Analytics
 # MAGIC 

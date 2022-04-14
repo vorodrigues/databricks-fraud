@@ -101,7 +101,7 @@ fs.write_table(
 # MAGIC %md-sandbox
 # MAGIC 
 # MAGIC # Next Step: AutoML
-# MAGIC ## Accelerating Churn model creation using Databricks Auto-ML
+# MAGIC ## Accelerating Fraud model creation using Databricks Auto-ML
 # MAGIC ### A glass-box solution that empowers data teams without taking away control
 # MAGIC 
 # MAGIC Databricks simplify model creation and MLOps. However, bootstraping new ML projects can still be long and inefficient. 
