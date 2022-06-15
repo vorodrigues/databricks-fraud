@@ -34,10 +34,6 @@ dbutils.fs.rm(path+"/checkpoints", True)
 
 # COMMAND ----------
 
-print('hello')
-
-# COMMAND ----------
-
 # DBTITLE 0,Overview
 # MAGIC %md # ATM Fraud Analytics
 # MAGIC 
@@ -106,12 +102,12 @@ bronzeDF = spark.readStream.format("cloudFiles") \
 #Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
-        .trigger(processingTime="2 seconds") \
         .toTable("visits_bronze")
+        #.trigger(processingTime="2 seconds") \
 
 # COMMAND ----------
 
-display(bronzeDF.groupBy('year', 'month', 'fraud_report').sum('amount'))
+display(spark.readStream.table('visits_bronze').groupBy('year', 'month', 'fraud_report').sum('amount').orderBy('year', 'month'))
 
 # COMMAND ----------
 
@@ -140,15 +136,15 @@ display(bronzeDF.groupBy('year', 'month', 'fraud_report').sum('amount'))
 #Cleanup the silver table
 #Our bronze table might have some malformed records.
 #Filter on _rescued_data to select only the rows without json error, filter on visit_id not null and drop unnecessary columns
-silverDF = bronzeDF.where('visit_id IS NOT NULL AND _rescued_data IS NULL') \
-                   .drop('_rescued_data') \
-                   .withColumn('date_visit', to_date(concat_ws('-', col('year'), lpad(col('month'),2,'0'), lpad(col('day'),2,'0')), 'yyyy-MM-dd')) \
-                   .where('date_visit IS NOT NULL')
+silverDF = spark.readStream.table('visits_bronze') \
+                .where('visit_id IS NOT NULL AND _rescued_data IS NULL') \
+                .drop('_rescued_data') \
+                .withColumn('date_visit', to_date(concat_ws('-', col('year'), lpad(col('month'),2,'0'), lpad(col('day'),2,'0')), 'yyyy-MM-dd')) \
+                .where('date_visit IS NOT NULL')
 
 #Write it back to your "turbine_silver" table
 silverDF.writeStream.format('delta') \
         .option("checkpointLocation", path+"/checkpoints/silver") \
-        .trigger(processingTime="2 seconds") \
         .toTable("visits_silver")
 
 # COMMAND ----------
@@ -169,21 +165,30 @@ locations = spark.table('locations_silver')
 customers = spark.table('customers_silver')
 
 #Join location and customer information
-goldDF = silverDF.join(locations, on='atm_id', how='left') \
-                 .join(customers, on='customer_id', how='left') \
-                 .withColumn('state', col('city_state_zip.state')) \
-                 .withColumn('city', col('city_state_zip.city')) \
-                 .withColumn('zip', col('city_state_zip.zip')) \
-                 .drop('city_state_zip')
+goldDF = spark.readStream.table('visits_silver') \
+              .join(locations, on='atm_id', how='left') \
+              .join(customers, on='customer_id', how='left') \
+              .withColumn('state', col('city_state_zip.state')) \
+              .withColumn('city', col('city_state_zip.city')) \
+              .withColumn('zip', col('city_state_zip.zip')) \
+              .drop('city_state_zip')
 
 goldDF.writeStream.format('delta') \
       .option('checkpointLocation', path+'/checkpoints/gold') \
-      .trigger(processingTime="2 seconds") \
       .toTable('visits_gold')
 
 # COMMAND ----------
 
 # MAGIC %sql SELECT * FROM visits_gold LIMIT 100
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select 'bronze' as layer, count(*) as cnt from visits_bronze
+# MAGIC union
+# MAGIC select 'silver' as layer, count(*) as cnt from visits_silver
+# MAGIC union
+# MAGIC select 'gold' as layer, count(*) as cnt from visits_gold
 
 # COMMAND ----------
 
@@ -347,10 +352,6 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- Note: this won't work with standard cluster. 
-# MAGIC -- DO NOT try to make it work during the demo.
-# MAGIC -- Understand what's required as of now (which cluster type) and the implications
-# MAGIC -- explore Databricks Unity Catalog initiative (go/uc) 
 # MAGIC 
 # MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.scientist@databricks.com`;
 # MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.analyst@databricks.com`
