@@ -1,6 +1,6 @@
 # Databricks notebook source
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
-# dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
+dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
+dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
 
 # COMMAND ----------
 

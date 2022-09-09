@@ -49,8 +49,8 @@ training_set = fs.create_training_set(
   label = 'fraud_report',
   exclude_columns = ['visit_id']
 )
-df = training_set.load_df()
 
+df = training_set.load_df()
 display(df)
 
 # COMMAND ----------

@@ -72,7 +72,7 @@ display(dbutils.fs.ls(path+'/raw/atm_visits'))
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT * FROM JSON.`$path/raw/atm_visits`
+# MAGIC %sql SELECT * FROM JSON.`$path/raw/atm_visits/part-00000-tid-3679982078169745009-ddf735d2-4ace-4422-9941-2006de988611-7-1-c000.json`
 
 # COMMAND ----------
 
@@ -102,7 +102,7 @@ bronzeDF = spark.readStream.format("cloudFiles") \
 #Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
-        .toTable("visits_bronze")
+        .saveAsTable("visits_bronze")
         #.trigger(processingTime="2 seconds") \
 
 # COMMAND ----------
@@ -342,16 +342,3 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %sql RESTORE visits_gold VERSION AS OF 1
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Grant Access to Database
-# MAGIC If on a Table-ACLs enabled High-Concurrency Cluster
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.scientist@databricks.com`;
-# MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.analyst@databricks.com`
