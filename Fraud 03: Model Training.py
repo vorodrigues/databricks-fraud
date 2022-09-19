@@ -289,7 +289,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 
   # log model
   wrappedModel = SklearnModelWrapper(model)
-  signature = infer_signature(X_train_raw, y_prob)
+  signature = infer_signature(X_train_raw, prob_train)
   mlflow.pyfunc.log_model(python_model=wrappedModel, artifact_path='model', signature=signature)
   mlflow.log_metric('train_auc', auc_train)
   mlflow.log_metric('test_auc', auc_test)
@@ -309,7 +309,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 
 # COMMAND ----------
 
-model_name = 'VR Fraud Analytics'
+model_name = 'VR ATM Fraud Model'
 
 # COMMAND ----------
 
