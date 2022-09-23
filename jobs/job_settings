@@ -6,7 +6,7 @@
         "max_concurrent_runs": 1,
         "tasks": [
             {
-                "existing_cluster_id": "0404-190023-1fkehgpg",
+                "existing_cluster_id": "0912-204442-bsovmjf1",
                 "notebook_task": {
                     "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-prod/Fraud 01: Data Engineering",
                     "base_parameters": {
@@ -20,7 +20,7 @@
                 "description": ""
             },
             {
-                "existing_cluster_id": "0404-190023-1fkehgpg",
+                "existing_cluster_id": "0912-204442-bsovmjf1",
                 "notebook_task": {
                     "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-prod/Fraud 02: Data Preparation",
                     "base_parameters": {
@@ -37,7 +37,7 @@
                 ]
             },
             {
-                "existing_cluster_id": "0404-190023-1fkehgpg",
+                "existing_cluster_id": "0912-204442-bsovmjf1",
                 "notebook_task": {
                     "notebook_path": "/Repos/victor.rodrigues@databricks.com/fraud-prod/Fraud 04: Model Scoring",
                     "base_parameters": {
