@@ -45,7 +45,7 @@ fs = feature_store.FeatureStoreClient()
 # COMMAND ----------
 
 # DBTITLE 1,Generate Predictions with Production Model
-model_name = 'VR Fraud Analytics'
+model_name = 'VR Fraud Model'
 
 preds = fs.score_batch(
     'models:/%s/Production' % model_name,
