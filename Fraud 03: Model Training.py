@@ -309,7 +309,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 
 # COMMAND ----------
 
-model_name = 'VR ATM Fraud Model'
+model_name = 'VR Fraud Model'
 
 # COMMAND ----------
 
