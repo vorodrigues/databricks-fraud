@@ -102,8 +102,8 @@ bronzeDF = spark.readStream.format("cloudFiles") \
 #Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
+        .trigger(processingTime="2 seconds") \
         .toTable("visits_bronze")
-        #.trigger(processingTime="2 seconds") \
 
 # COMMAND ----------
 
