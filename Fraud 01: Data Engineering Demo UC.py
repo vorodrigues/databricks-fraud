@@ -257,7 +257,7 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC DELETE FROM visits_gold where customer_since_date < '2016-02-01';
+# MAGIC DELETE FROM visits_gold where customer_since_date < '2016-03-01';
 
 # COMMAND ----------
 

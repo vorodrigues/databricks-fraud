@@ -354,15 +354,3 @@ spark.read.json('/FileStore/vr/fraud/dev/raw/atm_visits') \
 # COMMAND ----------
 
 # MAGIC %sql select 'fs'as layer, count(*) as cnt from vr_fraud_dev.fs_atm_visits
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
