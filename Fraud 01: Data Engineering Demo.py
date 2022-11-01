@@ -105,7 +105,6 @@ bronzeDF.writeStream.format("delta") \
         .trigger(availableNow=True) \
         .toTable("visits_bronze")
 
-
 # COMMAND ----------
 
 display(spark.readStream.table('visits_bronze').groupBy('year', 'month', 'fraud_report').sum('amount').orderBy('year', 'month'))
