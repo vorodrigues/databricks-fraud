@@ -1,20 +1,44 @@
 # Databricks notebook source
+dbutils.widgets.text('s3_path', '', 'S3 Path')
+
+# COMMAND ----------
+
+s3_path = dbutils.widgets.get('s3_path')
+
+# COMMAND ----------
+
 from pyspark.sql.functions import when, col
 
 # COMMAND ----------
 
-# MAGIC %md # Databases
+# MAGIC %md #Catalog
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE DATABASE IF NOT EXISTS vr_fraud_dev;
-# MAGIC CREATE DATABASE IF NOT EXISTS vr_fraud_test;
-# MAGIC CREATE DATABASE IF NOT EXISTS vr_fraud_prod;
+# MAGIC %sql CREATE CATALOG vr_fraud
+
+# COMMAND ----------
+
+# MAGIC %md #External Location
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE EXTERNAL LOCATION IF NOT EXISTS vr_fraud_location
+# MAGIC URL '${s3_path}/fraud'
+# MAGIC WITH (STORAGE CREDENTIAL field_demos_credential)
 
 # COMMAND ----------
 
 # MAGIC %md # Dev
+
+# COMMAND ----------
+
+# MAGIC %md ## Database
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud.dev
+# MAGIC LOCATION '${s3_path}/fraud/vr_fraud_dev'
 
 # COMMAND ----------
 
@@ -24,7 +48,7 @@ from pyspark.sql.functions import when, col
 
 spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_visits') \
      .withColumn('visit_id', when((col('visit_id') == 42701999) & (col('customer_id') == 204919), 44932650).otherwise(col('visit_id'))) \
-     .write.json('/FileStore/vr/fraud/dev/raw/atm_visits')
+     .write.json(f'{s3_path}/fraud/dev/raw/atm_visits')
 
 # COMMAND ----------
 
@@ -32,7 +56,9 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
-# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_dev.customers_silver AS SELECT * FROM parquet.`/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_customers`
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud.dev.customers_silver 
+# MAGIC LOCATION '${s3_path}/fraud/dev/customers_silver' AS
+# MAGIC SELECT * FROM parquet.`/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_customers`
 
 # COMMAND ----------
 
@@ -40,7 +66,9 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 
 # COMMAND ----------
 
-# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud_dev.locations_silver AS SELECT * FROM parquet.`/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_locations`
+# MAGIC %sql CREATE OR REPLACE TABLE vr_fraud.dev.locations_silver 
+# MAGIC LOCATION '${s3_path}/fraud/dev/locations_silver' AS 
+# MAGIC SELECT * FROM parquet.`/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_locations`
 
 # COMMAND ----------
 
@@ -62,13 +90,13 @@ spark.read.parquet('/mnt/databricks-datasets-private/ML/fighting_atm_fraud/atm_v
 # MAGIC   min,
 # MAGIC   amount,
 # MAGIC   withdrawl_or_deposit,
-# MAGIC   state,
+# MAGIC   city_state_zip.state as state,
 # MAGIC   pos_capability,
 # MAGIC   offsite_or_onsite,
 # MAGIC   bank,
 # MAGIC   checking_savings,
 # MAGIC   datediff('2018-01-01', customer_since_date) as customer_lifetime
-# MAGIC FROM vr_fraud_dev.visits_gold
+# MAGIC FROM vr_fraud.dev.visits_gold
 
 # COMMAND ----------
 
@@ -78,14 +106,14 @@ fs = feature_store.FeatureStoreClient()
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC drop table if exists vr_fraud_dev.fs_atm_visits;
-# MAGIC drop table if exists vr_fraud_test.fs_atm_visits;
-# MAGIC drop table if exists vr_fraud_prod.fs_atm_visits;
+# MAGIC drop table if exists vr_fraud.dev.fs_atm_visits;
+# MAGIC drop table if exists vr_fraud.test.fs_atm_visits;
+# MAGIC drop table if exists vr_fraud.prod.fs_atm_visits;
 
 # COMMAND ----------
 
 fs.create_table(
-    name="vr_fraud_dev.fs_atm_visits",
+    name="vr_fraud.dev.fs_atm_visits",
     df=spark.table("vw_atm_visits").limit(0),
     primary_keys=["visit_id"],
     description="ATM Fraud features [DEV]"
@@ -94,7 +122,7 @@ fs.create_table(
 # COMMAND ----------
 
 fs.create_table(
-    name="vr_fraud_test.fs_atm_visits",
+    name="vr_fraud.test.fs_atm_visits",
     df=spark.table("vw_atm_visits").limit(0),
     primary_keys=["visit_id"],
     description="ATM Fraud features [TEST]"
@@ -103,7 +131,7 @@ fs.create_table(
 # COMMAND ----------
 
 fs.create_table(
-    name="vr_fraud_prod.fs_atm_visits",
+    name="vr_fraud.prod.fs_atm_visits",
     df=spark.table("vw_atm_visits").limit(0),
     primary_keys=["visit_id"],
     description="ATM Fraud features [PROD]"
@@ -112,9 +140,6 @@ fs.create_table(
 # COMMAND ----------
 
 # MAGIC %md ## train
-# MAGIC <br>
-# MAGIC 
-# MAGIC - Use notebook 2 to fill the Feature Store
 
 # COMMAND ----------
 
@@ -198,6 +223,14 @@ df.writeTo('vr_fraud_dev.train_dataset').createOrReplace()
 
 # COMMAND ----------
 
+# MAGIC %md ## Database
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_test
+
+# COMMAND ----------
+
 # MAGIC %md ## atm_visits.json
 
 # COMMAND ----------
@@ -245,6 +278,14 @@ spark.read.json('/FileStore/vr/fraud/test/raw/atm_visits') \
 # COMMAND ----------
 
 # MAGIC %md # Prod
+
+# COMMAND ----------
+
+# MAGIC %md ## Database
+
+# COMMAND ----------
+
+# MAGIC %sql CREATE DATABASE IF NOT EXISTS vr_fraud_prod
 
 # COMMAND ----------
 
@@ -313,3 +354,15 @@ spark.read.json('/FileStore/vr/fraud/dev/raw/atm_visits') \
 # COMMAND ----------
 
 # MAGIC %sql select 'fs'as layer, count(*) as cnt from vr_fraud_dev.fs_atm_visits
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
