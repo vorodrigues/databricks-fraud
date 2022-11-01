@@ -1,6 +1,6 @@
 # Databricks notebook source
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
-# dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
+# dbutils.widgets.text('db', 'vr_fraud.dev', 'Database')
+# dbutils.widgets.text('path', 's3://databricks-vr/fraud/dev', 'Path')
 
 # COMMAND ----------
 
@@ -72,7 +72,7 @@ display(dbutils.fs.ls(path+'/raw/atm_visits'))
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT * FROM JSON.`$path/raw/atm_visits/part-00000-tid-3679982078169745009-ddf735d2-4ace-4422-9941-2006de988611-7-1-c000.json`
+# MAGIC %sql SELECT * FROM JSON.`$path/raw/atm_visits/part-00000-tid-1188815250474084220-34e2faeb-925c-4c10-9613-80195e843fb9-44-1-c000.json`
 
 # COMMAND ----------
 
@@ -102,7 +102,6 @@ bronzeDF = spark.readStream.format("cloudFiles") \
 #Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
-        .trigger(availableNow=True) \
         .toTable("visits_bronze")
 
 # COMMAND ----------
@@ -175,6 +174,7 @@ goldDF = spark.readStream.table('visits_silver') \
 
 goldDF.writeStream.format('delta') \
       .option('checkpointLocation', path+'/checkpoints/gold') \
+      .partitionBy('bank') \
       .toTable('visits_gold')
 
 # COMMAND ----------
@@ -184,11 +184,12 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select 'bronze' as layer, count(*) as cnt from visits_bronze
+# MAGIC select '1-bronze' as layer, count(*) as cnt from visits_bronze
 # MAGIC union
-# MAGIC select 'silver' as layer, count(*) as cnt from visits_silver
+# MAGIC select '2-silver' as layer, count(*) as cnt from visits_silver
 # MAGIC union
-# MAGIC select 'gold' as layer, count(*) as cnt from visits_gold
+# MAGIC select '3-gold' as layer, count(*) as cnt from visits_gold
+# MAGIC order by layer
 
 # COMMAND ----------
 
@@ -207,7 +208,7 @@ goldDF.writeStream.format('delta') \
 
 # COMMAND ----------
 
-# MAGIC %sql INSERT INTO visits_gold VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, null, 'deposit', 1, null, '', '', '', 1, '', '', '', null, '', '', '')
+# MAGIC %sql INSERT INTO visits_gold VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, null, 'deposit', 1, null, '', '', '', 1, '', '', '', null)
 
 # COMMAND ----------
 
@@ -215,7 +216,7 @@ goldDF.writeStream.format('delta') \
 
 # COMMAND ----------
 
-# MAGIC %sql INSERT INTO visits_gold VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 'transfer', 1, null, '', '', '', 1, '', '', '', null, '', '', '')
+# MAGIC %sql INSERT INTO visits_gold VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 'transfer', 1, null, '', '', '', 1, '', '', '', null)
 
 # COMMAND ----------
 
@@ -342,3 +343,16 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %sql RESTORE visits_gold VERSION AS OF 1
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Grant Access to Database
+# MAGIC If on a Table-ACLs enabled High-Concurrency Cluster
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.scientist@databricks.com`;
+# MAGIC GRANT SELECT ON DATABASE turbine_gold TO `data.analyst@databricks.com`
