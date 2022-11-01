@@ -233,7 +233,7 @@ with mlflow.start_run(run_name='XGBClassifer'):
     space=search_space,
     algo=tpe.suggest,
     max_evals=50,
-    trials=SparkTrials(parallelism=8), # set to the number of available cores
+    trials=SparkTrials(parallelism=5), # set to the number of available cores
     verbose=True
   )
 
