@@ -72,7 +72,7 @@ display(dbutils.fs.ls(path+'/raw/atm_visits'))
 
 # COMMAND ----------
 
-# MAGIC %sql SELECT * FROM JSON.`$path/raw/atm_visits/part-00000-tid-3679982078169745009-ddf735d2-4ace-4422-9941-2006de988611-7-1-c000.json`
+# MAGIC %sql SELECT * FROM JSON.`$path/raw/atm_visits/part-00000-tid-6242017081815707263-37eaf674-661e-458e-a6d1-5a82e2198105-2-1-c000.json`
 
 # COMMAND ----------
 
@@ -184,11 +184,12 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select 'bronze' as layer, count(*) as cnt from visits_bronze
+# MAGIC select '1-bronze' as layer, count(*) as cnt from visits_bronze
 # MAGIC union
-# MAGIC select 'silver' as layer, count(*) as cnt from visits_silver
+# MAGIC select '2-silver' as layer, count(*) as cnt from visits_silver
 # MAGIC union
-# MAGIC select 'gold' as layer, count(*) as cnt from visits_gold
+# MAGIC select '3-gold' as layer, count(*) as cnt from visits_gold
+# MAGIC order by layer
 
 # COMMAND ----------
 

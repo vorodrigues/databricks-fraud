@@ -77,23 +77,14 @@ bam
 
 # COMMAND ----------
 
-# DBTITLE 1,Try to load full dataset with Pandas
-import pandas as pd
-df = pd.read_parquet('/dbfs/FileStore/vr/fraud/dev/parquet/visits_gold')
-
-# COMMAND ----------
-
-# DBTITLE 1,Load a sample to Pandas with Spark
-visits_df = spark.table("spark_catalog.vr_fraud_dev.visits_silver").limit(10000000).toPandas()
-customer_df = spark.table("spark_catalog.vr_fraud_dev.customers_silver").limit(100000).toPandas()
-locations_df = spark.table("spark_catalog.vr_fraud_dev.locations_silver").limit(100000).toPandas()
-
-# COMMAND ----------
-
 import pandas as pd
 
-# Step: Keep rows where amount < 40
-visits_df = visits_df.loc[visits_df['amount'] < 40]
+visits_df = pd.read_parquet('/dbfs/FileStore/vr/fraud/dev/parquet/visits_silver')
+customers_df = pd.read_parquet('/dbfs/FileStore/vr/fraud/dev/parquet/customers_silver')
+locations_df = pd.read_parquet('/dbfs/FileStore/vr/fraud/dev/parquet/locations_silver')
+
+# Step: Keep rows where amount > 0
+visits_df = visits_df.loc[visits_df['amount'] > 0]
 
 # Step: Drop missing values in [All columns]
 visits_df = visits_df.dropna()
@@ -102,7 +93,7 @@ visits_df = visits_df.dropna()
 visits_df = visits_df.drop_duplicates(keep='first')
 
 # Step: Inner Join with customer_df where customer_id=customer_id
-visits_df = pd.merge(visits_df, customer_df, how='inner', on=['customer_id'])
+visits_df = pd.merge(visits_df, customers_df, how='inner', on=['customer_id'])
 
 # Step: Inner Join with locations_df where atm_id=atm_id
 visits_df = pd.merge(visits_df, locations_df, how='inner', on=['atm_id'])
@@ -148,12 +139,12 @@ visits_df
 
 import pyspark.pandas as ps
 
-visits_df = spark.table("spark_catalog.vr_fraud_dev.visits_silver").pandas_api()
-customer_df = spark.table("spark_catalog.vr_fraud_dev.customers_silver").pandas_api()
-locations_df = spark.table("spark_catalog.vr_fraud_dev.locations_silver").pandas_api()
+visits_df = spark.table(f"{db}.visits_silver").pandas_api()
+customers_df = spark.table(f"{db}.customers_silver").pandas_api()
+locations_df = spark.table(f"{db}.locations_silver").pandas_api()
 
-# Step: Keep rows where amount < 40
-visits_df = visits_df.loc[visits_df['amount'] < 40]
+# Step: Keep rows where amount > 0
+visits_df = visits_df.loc[visits_df['amount'] > 0]
 
 # Step: Drop missing values in [All columns]
 visits_df = visits_df.dropna()
@@ -162,7 +153,7 @@ visits_df = visits_df.dropna()
 visits_df = visits_df.drop_duplicates(keep='first')
 
 # Step: Inner Join with customer_df where customer_id=customer_id
-visits_df = ps.merge(visits_df, customer_df, how='inner', on=['customer_id'])
+visits_df = ps.merge(visits_df, customers_df, how='inner', on=['customer_id'])
 
 # Step: Inner Join with locations_df where atm_id=atm_id
 visits_df = ps.merge(visits_df, locations_df, how='inner', on=['atm_id'])
@@ -175,8 +166,6 @@ visits_df['date_visit'] = ps.to_datetime(visits_df['date_visit'], format='%Y-%m-
 
 # Step: Create new column 'customer_lifetime' from formula 'date_visit - customer_since_date'
 visits_df['customer_lifetime'] = visits_df['date_visit'] - visits_df['customer_since_date']
-
-# COMMAND ----------
 
 display(visits_df)
 
