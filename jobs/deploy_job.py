@@ -19,11 +19,6 @@ token = args.token
 
 # COMMAND ----------
 
-host = 'https://e2-demo-west.cloud.databricks.com'
-token = 'dapib5589f9d0964665829aee60fa85aae5b'
-
-# COMMAND ----------
-
 # MAGIC %md # Connect to API
 
 # COMMAND ----------
@@ -51,7 +46,7 @@ repos.update_repo(id=repos_id, branch='prod')
 
 # COMMAND ----------
 
-# MAGIC %md # Update Job
+# MAGIC %md # Query existing jobs
 
 # COMMAND ----------
 
@@ -61,19 +56,31 @@ with open('./job_settings', 'r') as f:
 
 # COMMAND ----------
 
-from os.path import exists
+name = settings['name']
 
-# Update existing job
-if exists('./job_id'):
-  print('Updating job...')
-  with open('./job_id', 'r') as f:
-    job_id = f.read()
-  jobs.reset_job(job_id=job_id, new_settings=settings)
+job_list = db.perform_query(method="get", version="2.1", path="/jobs/list", data={"name": name})['jobs']
+
+# COMMAND ----------
+
+# MAGIC %md # Create or Update Job
+
+# COMMAND ----------
+
+# Check for duplicated jobs
+if len(job_list) > 1:
+  raise Exception(
+    f"""There are more than one jobs with name {name}.
+        Please delete duplicated jobs first."""
+  )
 
 # Create new job
-else:
+elif not job_list:
   print('Creating new job...')
-  job_id = jobs.create_job(name=settings['name'], tasks=settings['tasks'])['job_id']
-  with open('./job_id', 'w') as f:
-    f.write(str(job_id))
-  print(job_id)
+  job_id = jobs.create_job(name=name, tasks=settings['tasks'])['job_id']
+  print(f'job_id = {job_id}')
+
+# Update existing job
+else:
+  job_id = job_list[0]['job_id']
+  print(f'Updating job {name}...')
+  jobs.reset_job(job_id=job_id, new_settings=settings)
