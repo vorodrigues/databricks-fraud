@@ -69,34 +69,6 @@ bam
 
 # COMMAND ----------
 
-import pandas as pd; import numpy as np
-visits_df = spark.table("spark_catalog.vr_fraud_dev.visits_silver").limit(100000).toPandas()
-# Step: Keep rows where amount > 0
-visits_df = visits_df.loc[visits_df['amount'] > 0]
-
-# Step: Drop missing values in [All columns]
-visits_df = visits_df.dropna()
-
-# Step: Drop duplicates based on ['amount', 'atm_id', 'customer_id', 'day', 'fraud_report', 'hour', 'min', 'month', 'sec', 'visit_id', 'withdrawl_or_deposit', 'year', 'date_visit']
-visits_df = visits_df.drop_duplicates(keep='first')
-
-# Step: Inner Join with customers_df where customer_id=customer_id
-visits_df = pd.merge(visits_df, customers_df, how='inner', on=['customer_id'])
-
-# Step: Inner Join with locations_df where atm_id=atm_id
-visits_df = pd.merge(visits_df, locations_df, how='inner', on=['atm_id'])
-
-# Step: Change data type of customer_since_date to Datetime
-visits_df['customer_since_date'] = pd.to_datetime(visits_df['customer_since_date'], infer_datetime_format=True)
-
-# Step: Change data type of date_visit to Datetime
-visits_df['date_visit'] = pd.to_datetime(visits_df['date_visit'], infer_datetime_format=True)
-
-# Step: Create new column 'customer_lifetime' from formula 'date_visit - customer_since_date'
-visits_df['customer_lifetime'] = visits_df['date_visit'] - visits_df['customer_since_date']
-
-# COMMAND ----------
-
 # MAGIC %md ### Pandas
 # MAGIC 
 # MAGIC Databricks ML Runtime includes all major Data Science tools and libraries by default, so you don't need to worry about setting up your environment.
