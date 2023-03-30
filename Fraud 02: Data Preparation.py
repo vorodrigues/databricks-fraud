@@ -32,6 +32,10 @@ print('DATABASE: '+db)
 
 # COMMAND ----------
 
+# MAGIC %sql select * FROM visits_gold
+
+# COMMAND ----------
+
 # MAGIC %sql SELECT SUM(amount), hour, fraud_report FROM visits_gold GROUP BY hour, fraud_report ORDER BY hour
 
 # COMMAND ----------
@@ -231,7 +235,30 @@ fs = feature_store.FeatureStoreClient()
 fs.write_table(
     name=db+".fs_atm_visits",
     df=visits_df.to_spark(),
-    mode="overwrite"
+    mode="merge"
+)
+
+# COMMAND ----------
+
+# MAGIC %md ## Publish to Online Store
+
+# COMMAND ----------
+
+from databricks.feature_store.online_store_spec import AmazonDynamoDBSpec
+
+online_store = AmazonDynamoDBSpec(
+  region='us-west-2',
+  read_secret_prefix='one-env-dynamodb-fs-read/field-eng',
+  write_secret_prefix='one-env-dynamodb-fs-write/field-eng',
+  table_name='feature_store_vr_atm_visits'
+)
+
+fs.publish_table(
+  name=db+'.fs_atm_visits',
+  online_store=online_store,
+  #filter_condition=f"_dt = '{str(datetime.date.today())}'",
+  is_streaming=True,
+  mode='merge'
 )
 
 # COMMAND ----------

@@ -55,6 +55,7 @@ display(df)
 
 # COMMAND ----------
 
+import sklearn
 from sklearn.model_selection import train_test_split
 
 # split train and test datasets
@@ -257,7 +258,7 @@ class SklearnModelWrapper(mlflow.pyfunc.PythonModel):
   def predict(self, context, model_input):
     features = self.pre_processing(model_input)
     preds = self.model.predict_proba(features)[:,1]
-    return post_processing(preds)
+    return self.post_processing(preds)
 
 # COMMAND ----------
 
@@ -298,7 +299,12 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
   # log model
   wrappedModel = SklearnModelWrapper(model)
   signature = infer_signature(X_train_raw, prob_train)
-  mlflow.pyfunc.log_model(python_model=wrappedModel, artifact_path='model', signature=signature)
+  mlflow.pyfunc.log_model(
+    python_model=wrappedModel, 
+    artifact_path='model', 
+    signature=signature, 
+    extra_pip_requirements=[f"scikit-learn=={sklearn.__version__}"], 
+    input_example=X_train_raw.head(1))
   mlflow.log_metric('train_auc', auc_train)
   mlflow.log_metric('test_auc', auc_test)
 
@@ -317,7 +323,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 
 # COMMAND ----------
 
-model_name = 'VR Fraud Model'
+model_name = 'VR Fraud RT Model'
 
 # COMMAND ----------
 
@@ -326,5 +332,6 @@ fs.log_model(
   "model",
   flavor=mlflow.pyfunc,
   training_set=training_set,
-  registered_model_name=model_name
+  registered_model_name=model_name,
+  extra_pip_requirements=[f"scikit-learn=={sklearn.__version__}"], 
 )

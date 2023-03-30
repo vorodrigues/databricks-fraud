@@ -48,7 +48,7 @@ fs = feature_store.FeatureStoreClient()
 model_name = 'VR Fraud Model'
 
 preds = fs.score_batch(
-    'models:/%s/Production' % model_name,
+    f'models:/{model_name}/Production',
     spark.table(db+'.test')
 )['visit_id','prediction']
 
