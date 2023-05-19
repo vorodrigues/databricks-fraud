@@ -244,7 +244,7 @@ with mlflow.start_run(run_name='XGBClassifer'):
 
 # COMMAND ----------
 
-class ModelWrapper(mlflow.pyfunc.PythonModel):
+class SklearnModelWrapper(mlflow.pyfunc.PythonModel):
   
   def __init__(self, model):
     self.model = model
@@ -297,7 +297,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
   auc_test = roc_auc_score(y_test, prob_test[:,1])
 
   # log model
-  wrappedModel = ModelWrapper(model)
+  wrappedModel = SklearnModelWrapper(model)
   signature = infer_signature(X_train_raw, prob_train)
   mlflow.pyfunc.log_model(
     python_model=wrappedModel, 
@@ -323,7 +323,7 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 
 # COMMAND ----------
 
-model_name = 'VR Fraud ST Model'
+model_name = 'VR Fraud RT Model'
 
 # COMMAND ----------
 
@@ -334,15 +334,4 @@ fs.log_model(
   training_set=training_set,
   registered_model_name=model_name,
   extra_pip_requirements=[f"scikit-learn=={sklearn.__version__}"], 
-  signature=signature,
-  input_example=X_train_raw.head(1)
 )
-mlflow.log_metric('train_auc', auc_train)
-mlflow.log_metric('test_auc', auc_test)
-mlflow.end_run()
-
-# COMMAND ----------
-
-# MAGIC %md 
-# MAGIC If you don't want to use the Feature Store, you can use the following code to register the best model from it's previous run:<br>
-# MAGIC `mlflow.register_model(f'runs:/{run_id}/model', model_name)`

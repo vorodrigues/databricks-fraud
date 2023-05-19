@@ -17,11 +17,11 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 03: Model Training
-# MAGIC 
+# MAGIC
 # MAGIC The next step is to train lots of different models using different algorithms and parameters in search for the one that optimally solves our business problem.
-# MAGIC 
+# MAGIC
 # MAGIC That's where the **Spark** + **HyperOpt** + **MLflow** framework can be leveraged to easily distribute the training proccess across a cluster, efficiently optimize hyperparameters and track all experiments in order to quickly evaluate many models, choose the best one and guarantee its reproducibility.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_2.jpg)
 
 # COMMAND ----------
@@ -118,13 +118,13 @@ display(pre)
 # COMMAND ----------
 
 # MAGIC %md ### Define Experiment
-# MAGIC 
+# MAGIC
 # MAGIC The XGBClassifier makes available a [wide variety of hyperparameters](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier) which can be used to tune model training.  Using some knowledge of our data and the algorithm, we might attempt to manually set some of the hyperparameters. But given the complexity of the interactions between them, it can be difficult to know exactly which combination of values will provide us the best model results.  It's in scenarios such as these that we might perform a series of model runs with different hyperparameter settings to observe how the model responds and arrive at an optimal combination of values.
-# MAGIC 
+# MAGIC
 # MAGIC Using hyperopt, we can automate this task, providing the hyperopt framework with a range of potential values to explore.  Calling a function which trains the model and returns an evaluation metric, hyperopt can through the available search space to towards an optimum combination of values.
-# MAGIC 
+# MAGIC
 # MAGIC For model evaluation, we will be using the Area Under the Curve (AUC) score which increases towards 1.0 as the model improves.  Because hyperopt recognizes improvements as our evaluation metric declines, we will use `-1 * AUC` as our loss metric within the framework. 
-# MAGIC 
+# MAGIC
 # MAGIC Putting this all together, we might arrive at model training and evaluation function as follows:
 
 # COMMAND ----------
@@ -175,7 +175,7 @@ def evaluate_model(hyperopt_params):
 # COMMAND ----------
 
 # MAGIC %md The first part of the model evaluation function retrieves from memory replicated copies of our training and testing feature and label sets.  Our intent is to leverage SparkTrials in combination with hyperopt to parallelize the training of models across a Spark cluster, allowing us to perform multiple, simultaneous model training evaluation runs and reduce the overall time required to navigate the seach space.  By replicating our datasets to the worker nodes of the cluster, a task performed in the next cell, copies of the data needed for training and evaluation can be efficiently made available to the function with minimal networking overhead:
-# MAGIC 
+# MAGIC
 # MAGIC **NOTE** See the Distributed Hyperopt [best practices documentation](https://docs.databricks.com/applications/machine-learning/automl-hyperparam-tuning/hyperopt-best-practices.html#handle-datasets-of-different-orders-of-magnitude-notebook) for more options for data distribution.
 
 # COMMAND ----------
@@ -220,7 +220,7 @@ search_space = {
 # COMMAND ----------
 
 # MAGIC %md ### Run Experiment
-# MAGIC 
+# MAGIC
 # MAGIC The remainder of the model evaluation function is fairly straightforward.  We simply train and evaluate our model and return our loss value, *i.e.* `-1 * AUC`, as part of a dictionary interpretable by hyperopt.  Based on returned values, hyperopt will generate a new set of hyperparameter values from within the search space definition with which it will attempt to improve our metric. We will limit the number of hyperopt evaluations to 250 simply based on a few trail runs we performed (not shown).  The larger the potential search space and the degree to which the model (in combination with the training dataset) responds to different hyperparameter combinations determines how many iterations are required for hyperopt to arrive at locally optimal values.  You can examine the output of the hyperopt run to see how our loss metric slowly improves over the course of each of these evaluations:
 
 # COMMAND ----------
@@ -314,11 +314,11 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 # COMMAND ----------
 
 # MAGIC %md ## Register Champion Model
-# MAGIC 
+# MAGIC
 # MAGIC After choosing a model that best fits our needs, we can then go ahead and kick off its operationalization proccess.
-# MAGIC 
+# MAGIC
 # MAGIC The first step is to register it to the **Model Registry**, where we can version, manage its life cycle with an workflow and track/audit all changes.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_3.jpg)
 
 # COMMAND ----------
@@ -332,6 +332,117 @@ fs.log_model(
   "model",
   flavor=mlflow.pyfunc,
   training_set=training_set,
-  registered_model_name=model_name,
-  extra_pip_requirements=[f"scikit-learn=={sklearn.__version__}"], 
+  registered_model_name=model_name
+)
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+db = dbutils.widgets.get('db')
+print('DATABASE: '+db)
+
+# COMMAND ----------
+
+from databricks import feature_store
+fs = feature_store.FeatureStoreClient()
+
+# COMMAND ----------
+
+import mlflow
+
+class SklearnModelWrapper(mlflow.pyfunc.PythonModel):
+  
+  def __init__(self, model):
+    self.model = model
+  
+  def pre_processing(self, model_input):
+    return model_input
+  
+  def post_processing(self, preds):
+    return preds
+    
+  def predict(self, context, model_input):
+    features = self.pre_processing(model_input)
+    preds = self.model.predict_proba(features)[:,1]
+    return self.post_processing(preds)
+
+# COMMAND ----------
+
+from mlflow.models.signature import infer_signature
+
+# train model with optimal settings 
+with mlflow.start_run(run_name='XGB Final Model') as run:
+  
+  # capture run info for later use
+  run_id = run.info.run_id
+  run_name = run.data.tags['mlflow.runName']
+   
+  # configure params
+  params = space_eval(search_space, argmin)
+  if 'max_depth' in params: params['max_depth']=int(params['max_depth'])       
+  if 'min_child_weight' in params: params['min_child_weight']=int(params['min_child_weight'])
+  if 'max_delta_step' in params: params['max_delta_step']=int(params['max_delta_step'])
+  if 'scale_pos_weight' in params: params['scale_pos_weight']=int(params['scale_pos_weight'])    
+  params['tree_method']='hist'
+  params['predictor']='cpu_predictor'
+  mlflow.log_params(params)
+  
+  # train
+  model = Pipeline(steps=[
+    ('pre', pre),
+    ('clf', XGBClassifier(**params))
+  ])
+  model.fit(X_train_raw, y_train)
+  
+  # predict
+  prob_train = model.predict_proba(X_train_raw)
+  prob_test = model.predict_proba(X_test_raw)
+  
+  # evaluate
+  auc_train = roc_auc_score(y_train, prob_train[:,1])
+  auc_test = roc_auc_score(y_test, prob_test[:,1])
+
+  # log model
+  wrappedModel = SklearnModelWrapper(model)
+  signature = infer_signature(X_train_raw, prob_train)
+  mlflow.pyfunc.log_model(
+    python_model=wrappedModel, 
+    artifact_path='model', 
+    signature=signature, 
+    extra_pip_requirements=[f"scikit-learn=={sklearn.__version__}"], 
+    input_example=X_train_raw.head(1))
+  mlflow.log_metric('train_auc', auc_train)
+  mlflow.log_metric('test_auc', auc_test)
+
+  print('Model logged under run_id "{0}" with AUC score of {1:.5f}'.format(run_id, auc_test))
+  display(model)
+
+# COMMAND ----------
+
+from databricks.feature_store.online_store_spec import AmazonDynamoDBSpec
+
+# do not pass `write_secret_prefix` if you intend to use the instance profile attached to the cluster.
+online_store = AmazonDynamoDBSpec(
+  region='us-west-2',
+  read_secret_prefix='one-env-dynamodb-fs-read/field-eng',
+  write_secret_prefix='one-env-dynamodb-fs-write/field-eng',
+  table_name='feature_store_vr_atm_visits'
+)
+
+fs.publish_table(
+  name=db+'.fs_atm_visits',
+  online_store=online_store,
+  #filter_condition=f"_dt = '{str(datetime.date.today())}'",
+  mode='merge'
 )
