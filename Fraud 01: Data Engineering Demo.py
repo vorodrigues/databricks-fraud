@@ -36,11 +36,11 @@ dbutils.fs.rm(path+"/checkpoints", True)
 
 # DBTITLE 0,Overview
 # MAGIC %md # ATM Fraud Analytics
-# MAGIC 
+# MAGIC
 # MAGIC **According to the Secret Service, the crime is responsible for about $350,000 of monetary losses each day in the United States and is considered to be the number one ATM-related crime. Trade group Global ATM Security Alliance estimates that skimming costs the U.S.-banking industry about $60 million a year.**
-# MAGIC 
+# MAGIC
 # MAGIC The easiest way that companies identify atm fraud is by recognizing a break in spending patterns.  For example, if you live in Wichita, KS and suddenly your card is used to buy something in Bend, OR – that may tip the scales in favor of possible fraud, and your credit card company might decline the charges and ask you to verify them.
-# MAGIC 
+# MAGIC
 # MAGIC  
 # MAGIC ![Databricks for Credit Card Fraud](https://s3.us-east-2.amazonaws.com/databricks-knowledge-repo-images/ML/fighting_atm_fraud/credit_card_with_padlock.jpg)  
 # MAGIC * [**ATM Fraud Analytics**](https://www.csoonline.com/article/2124891/fraud-prevention/atm-skimming--how-to-recognize-card-fraud.html) is the use of data analytics and machine learning to detect ATM fraud and is...  
@@ -52,13 +52,13 @@ dbutils.fs.rm(path+"/checkpoints", True)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 01: Data Engineering
-# MAGIC 
+# MAGIC
 # MAGIC The first step to prevent **ATM fraud** is to make sure we can ingest, clean and organize our data in a **performant**, **reliable** and **cost efficient** manner.
-# MAGIC 
+# MAGIC
 # MAGIC Here we are going to create a streaming pipeline to increasingly improve our data quality while moving through different layers of our **Lakehouse** and deliver it to be consumed by **BI** reports and **ML** models.
-# MAGIC 
+# MAGIC
 # MAGIC **Delta Lake** is a key enabler of this architecture, reducing the work required by data engineers to develop and maintain these pipelines.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://databricks.com/wp-content/uploads/2020/09/delta-lake-medallion-model-scaled.jpg" width=1012/>
 
 # COMMAND ----------
@@ -81,18 +81,18 @@ display(dbutils.fs.ls(path+'/raw/atm_visits'))
 # COMMAND ----------
 
 # MAGIC %md ### Auto Loader
-# MAGIC 
+# MAGIC
 # MAGIC Auto Loader incrementally and efficiently processes new data files as they arrive in cloud storage.
-# MAGIC 
+# MAGIC
 # MAGIC Auto Loader provides a Structured Streaming source called cloudFiles. Given an input directory path on the cloud file storage, the cloudFiles source automatically processes new files as they arrive, with the option of also processing existing files in that directory.
-# MAGIC 
+# MAGIC
 # MAGIC ![](https://databricks.com/wp-content/uploads/2020/02/autoloader.png)
 
 # COMMAND ----------
 
 #Ingest data using Auto Loader.
 bronzeDF = spark.readStream.format("cloudFiles") \
-                .option("cloudFiles.format", "json") \
+                .option("cloudFiles.format", "parquet") \
                 .option("cloudFiles.schemaLocation", path+"/schemas") \
                 .option("cloudFiles.schemaEvolutionMode", "addNewColumns") \
                 .option("cloudFiles.inferColumnTypes", True) \
@@ -112,7 +112,7 @@ display(spark.readStream.table('visits_bronze').groupBy('year', 'month', 'fraud_
 # COMMAND ----------
 
 # MAGIC %md ### Auto Optimize
-# MAGIC 
+# MAGIC
 # MAGIC Auto Optimize is an optional set of features that automatically compact small files during individual writes to a Delta table. Paying a small cost during writes offers significant benefits for tables that are queried actively. It is particularly useful in the following scenarios:<br><br>
 # MAGIC   - Streaming use cases where latency in the order of minutes is acceptable
 # MAGIC   - MERGE INTO is the preferred method of writing into Delta Lake
@@ -246,7 +246,7 @@ goldDF.writeStream.format('delta') \
 
 # MAGIC %md
 # MAGIC ### Full DML Support ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC 
+# MAGIC
 # MAGIC Delta Lake brings ACID transactions and full DML support to data lakes: `DELETE`, `UPDATE`, `MERGE INTO`
 
 # COMMAND ----------
@@ -270,12 +270,12 @@ goldDF.writeStream.format('delta') \
 # MAGIC 5. Delete the original table (and all of those associated files)
 # MAGIC 6. "Rename" the temp table back to the original table name
 # MAGIC 7. Drop the temp table
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://pages.databricks.com/rs/094-YMS-629/images/merge-into-legacy.gif" alt='Merge process' width=600/>
-# MAGIC 
-# MAGIC 
+# MAGIC
+# MAGIC
 # MAGIC #### INSERT or UPDATE with Delta Lake
-# MAGIC 
+# MAGIC
 # MAGIC 2-step process: 
 # MAGIC 1. Identify rows to insert or update
 # MAGIC 2. Use `MERGE`
@@ -294,29 +294,29 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %md ### Time Travel ![](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png)
-# MAGIC 
+# MAGIC
 # MAGIC Delta Lake’s time travel capabilities simplify building data pipelines for use cases including:
-# MAGIC 
+# MAGIC
 # MAGIC * Auditing Data Changes
 # MAGIC * Reproducing experiments & reports
 # MAGIC * Rollbacks
-# MAGIC 
+# MAGIC
 # MAGIC As you write into a Delta table or directory, every operation is automatically versioned.
-# MAGIC 
+# MAGIC
 # MAGIC <img src="https://github.com/risan4841/img/blob/master/transactionallogs.png?raw=true" width=250/>
-# MAGIC 
+# MAGIC
 # MAGIC You can query snapshots of your tables by:
 # MAGIC 1. **Version number**, or
 # MAGIC 2. **Timestamp.**
-# MAGIC 
+# MAGIC
 # MAGIC using Python, Scala, and/or SQL syntax; for these examples we will use the SQL syntax.  
-# MAGIC 
+# MAGIC
 # MAGIC For more information, refer to the [docs](https://docs.delta.io/latest/delta-utility.html#history), or [Introducing Delta Time Travel for Large Scale Data Lakes](https://databricks.com/blog/2019/02/04/introducing-delta-time-travel-for-large-scale-data-lakes.html)
 
 # COMMAND ----------
 
 # MAGIC %md Review Delta Lake Table History for  Auditing & Governance
-# MAGIC 
+# MAGIC
 # MAGIC All the transactions for this table are stored within this table including the initial set of insertions, update, delete, merge, and inserts with schema modification
 
 # COMMAND ----------
@@ -326,7 +326,7 @@ goldDF.writeStream.format('delta') \
 # COMMAND ----------
 
 # MAGIC %md Use time travel to count records both in the latest version of the data, as well as the initial version.
-# MAGIC 
+# MAGIC
 # MAGIC As you can see, 10 new records was added.
 
 # COMMAND ----------
