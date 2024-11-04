@@ -1,6 +1,6 @@
 # Databricks notebook source
-# dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
-# dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
+dbutils.widgets.text('db', 'vr_fraud_dev', 'Database')
+dbutils.widgets.text('path', '/FileStore/vr/fraud/dev', 'Path')
 
 # COMMAND ----------
 
@@ -92,18 +92,20 @@ display(dbutils.fs.ls(path+'/raw/atm_visits'))
 
 #Ingest data using Auto Loader.
 bronzeDF = spark.readStream.format("cloudFiles") \
-                .option("cloudFiles.format", "parquet") \
+                .option("cloudFiles.format", "json") \
                 .option("cloudFiles.schemaLocation", path+"/schemas") \
                 .option("cloudFiles.schemaEvolutionMode", "addNewColumns") \
                 .option("cloudFiles.inferColumnTypes", True) \
                 .option("cloudFiles.maxFilesPerTrigger", 1) \
+                .option("locale", "BR") \
                 .load(path+"/raw/atm_visits")
 
 #Write Stream as Delta Table
 bronzeDF.writeStream.format("delta") \
         .option("checkpointLocation", path+"/checkpoints/bronze") \
         .trigger(availableNow=True) \
-        .toTable("visits_bronze")
+        .toTable("visits_bronze") \
+        .awaitTermination()
 
 # COMMAND ----------
 
@@ -286,6 +288,8 @@ goldDF.writeStream.format('delta') \
 # MAGIC MERGE INTO visits_gold AS l
 # MAGIC USING (SELECT * FROM visits_gold LIMIT 10) AS m
 # MAGIC ON l.visit_id = m.visit_id
+# MAGIC WHEN MATCHED AND op = 'd' THEN 
+# MAGIC   DELETE
 # MAGIC WHEN MATCHED THEN 
 # MAGIC   UPDATE SET *
 # MAGIC WHEN NOT MATCHED THEN

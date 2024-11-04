@@ -13,26 +13,26 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 02: Data Preparation
-# MAGIC 
+# MAGIC
 # MAGIC Now that data has been ingested, cleaned and organized, data scientists can explore it to understand patterns and gain insigths.
-# MAGIC 
+# MAGIC
 # MAGIC Then they can leverage this knowledge to engineer new features and improve existing ones.
-# MAGIC 
+# MAGIC
 # MAGIC And, finally, load them to a Feature Store to share and manage those variables.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_1.jpg)
 
 # COMMAND ----------
 
 # MAGIC %md ## Visualizing the distribution of fraud
-# MAGIC 
+# MAGIC
 # MAGIC Let's analyze our dataset to understand fraud behaviour in general.
-# MAGIC 
+# MAGIC
 # MAGIC We can query the data using our preferred language and then create visualizations without wiritting a line of code.
 
 # COMMAND ----------
 
-# MAGIC %sql select * FROM visits_gold
+# MAGIC %sql select * FROM vr_fraud.dev.visits_gold
 
 # COMMAND ----------
 
@@ -49,11 +49,11 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md ### BambooLib
-# MAGIC 
+# MAGIC
 # MAGIC Databricks alllows you to quickly create your pipelines using a **no-code UI**. You can interact with your data and simply select transformations you want to apply directly on the notebook. BambooLib will automatically generate the code for you in a **glass-box approach**: you can review and modify the code as much as you want.
-# MAGIC 
+# MAGIC
 # MAGIC In this notebook we're going to:<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC - Load transaction (visit), customer and location data
 # MAGIC - Filter desired visits
 # MAGIC - Drop rows with missing values
@@ -74,9 +74,9 @@ bam
 # COMMAND ----------
 
 # MAGIC %md ### Pandas
-# MAGIC 
+# MAGIC
 # MAGIC Databricks ML Runtime includes all major Data Science tools and libraries by default, so you don't need to worry about setting up your environment.
-# MAGIC 
+# MAGIC
 # MAGIC Let's use Pandas to prepare our data for training ML models.
 
 # COMMAND ----------
@@ -116,27 +116,27 @@ visits_df
 # COMMAND ----------
 
 # MAGIC %md-sandbox ### Pandas on Spark
-# MAGIC 
+# MAGIC
 # MAGIC <div style="float:right ;">
 # MAGIC   <img src="https://raw.githubusercontent.com/databricks/koalas/master/Koalas-logo.png" width="150"/>
 # MAGIC </div>
-# MAGIC 
+# MAGIC
 # MAGIC Using Databricks, data scientists don't have to learn a new API to analyse data and deploy new model in production
-# MAGIC 
+# MAGIC
 # MAGIC * If you model is small and fit in a single node, you can use a Single Node cluster with pandas directly
 # MAGIC * If your data grow, no need to re-write the code. Just switch to pandas on spark and your cluster will parallelize your compute out of the box.
-# MAGIC 
+# MAGIC
 # MAGIC #### Scale Pandas with Databricks Runtime as backend
-# MAGIC 
-# MAGIC 
+# MAGIC
+# MAGIC
 # MAGIC One of the known limitations in pandas is that it does not scale with your data volume linearly due to single-machine processing. For example, pandas fails with out-of-memory if it attempts to read a dataset that is larger than the memory available in a single machine.
-# MAGIC 
-# MAGIC 
+# MAGIC
+# MAGIC
 # MAGIC Pandas API on Spark overcomes the limitation, enabling users to work with large datasets by leveraging Spark!
-# MAGIC 
-# MAGIC 
+# MAGIC
+# MAGIC
 # MAGIC **As result, Data Scientists can access dataset in Unity Catalog with simple SQL or spark command, and then switch to the API they know (pandas) best without having to worry about the table size and scalability!**
-# MAGIC 
+# MAGIC
 # MAGIC *Note: Starting with spark 3.2, pandas API are directly part of spark runtime, no need to import external library!*
 
 # COMMAND ----------
@@ -176,7 +176,7 @@ display(visits_df)
 # COMMAND ----------
 
 # MAGIC %md ### Pandas + SQL
-# MAGIC 
+# MAGIC
 # MAGIC Pandas on Spark dataframes can also be queried using plain SQL, allowing a perfect match between Pandas Python API and SQL usage
 
 # COMMAND ----------
@@ -205,13 +205,13 @@ display(visits_df)
 # COMMAND ----------
 
 # MAGIC %md ## Load Feature Store
-# MAGIC 
+# MAGIC
 # MAGIC Once our features are ready, we'll save them in Databricks Feature Store. Under the hood, features store are backed by a **Delta Lake** table and co-designed with **MLflow**.
-# MAGIC 
+# MAGIC
 # MAGIC This will allow **discoverability** and **reusability** of our feature accross our organization, increasing team efficiency.
-# MAGIC 
+# MAGIC
 # MAGIC Feature store will bring **traceability** and **governance** in our deployment, knowing which model is dependent of which set of features.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/fs.jpg)
 
 # COMMAND ----------
@@ -222,7 +222,7 @@ fs = feature_store.FeatureStoreClient()
 # COMMAND ----------
 
 # MAGIC %md For the first time, use the following code to create a Feature Table:
-# MAGIC 
+# MAGIC
 # MAGIC `fs.create_table(
 # MAGIC     name=db+".fs_atm_visits",
 # MAGIC     df=visits_df.to_spark(),
@@ -264,18 +264,18 @@ fs.publish_table(
 # COMMAND ----------
 
 # MAGIC %md-sandbox
-# MAGIC 
+# MAGIC
 # MAGIC # Next Step: AutoML
 # MAGIC ## Accelerating Fraud model creation using Databricks Auto-ML
 # MAGIC ### A glass-box solution that empowers data teams without taking away control
-# MAGIC 
+# MAGIC
 # MAGIC Databricks simplify model creation and MLOps. However, bootstraping new ML projects can still be long and inefficient. 
-# MAGIC 
+# MAGIC
 # MAGIC Instead of creating the same boterplate for each new project, Databricks Auto-ML can automatically generate state of the art models for classification, regression, and forecast.
-# MAGIC 
-# MAGIC 
+# MAGIC
+# MAGIC
 # MAGIC <img width="1000" src="https://github.com/QuentinAmbard/databricks-demo/raw/main/retail/resources/images/auto-ml-full.png"/>
-# MAGIC 
+# MAGIC
 # MAGIC Models can be directly deployed, or instead leverage generated notebooks to boostrap projects with best-practices, saving you weeks of efforts.
-# MAGIC 
+# MAGIC
 # MAGIC While this is done using the UI, you can also leverage the [Python API](https://docs.databricks.com/applications/machine-learning/automl.html#automl-python-api-1)

@@ -17,11 +17,11 @@ print('DATABASE: '+db)
 # COMMAND ----------
 
 # MAGIC %md # Fraud 03: Model Training
-# MAGIC 
+# MAGIC
 # MAGIC The next step is to train lots of different models using different algorithms and parameters in search for the one that optimally solves our business problem.
-# MAGIC 
+# MAGIC
 # MAGIC That's where the **Spark** + **HyperOpt** + **MLflow** framework can be leveraged to easily distribute the training proccess across a cluster, efficiently optimize hyperparameters and track all experiments in order to quickly evaluate many models, choose the best one and guarantee its reproducibility.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_2.jpg)
 
 # COMMAND ----------
@@ -117,13 +117,13 @@ display(pre)
 # COMMAND ----------
 
 # MAGIC %md ### Define Experiment
-# MAGIC 
+# MAGIC
 # MAGIC The XGBClassifier makes available a [wide variety of hyperparameters](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier) which can be used to tune model training.  Using some knowledge of our data and the algorithm, we might attempt to manually set some of the hyperparameters. But given the complexity of the interactions between them, it can be difficult to know exactly which combination of values will provide us the best model results.  It's in scenarios such as these that we might perform a series of model runs with different hyperparameter settings to observe how the model responds and arrive at an optimal combination of values.
-# MAGIC 
+# MAGIC
 # MAGIC Using hyperopt, we can automate this task, providing the hyperopt framework with a range of potential values to explore.  Calling a function which trains the model and returns an evaluation metric, hyperopt can through the available search space to towards an optimum combination of values.
-# MAGIC 
+# MAGIC
 # MAGIC For model evaluation, we will be using the Area Under the Curve (AUC) score which increases towards 1.0 as the model improves.  Because hyperopt recognizes improvements as our evaluation metric declines, we will use `-1 * AUC` as our loss metric within the framework. 
-# MAGIC 
+# MAGIC
 # MAGIC Putting this all together, we might arrive at model training and evaluation function as follows:
 
 # COMMAND ----------
@@ -174,7 +174,7 @@ def evaluate_model(hyperopt_params):
 # COMMAND ----------
 
 # MAGIC %md The first part of the model evaluation function retrieves from memory replicated copies of our training and testing feature and label sets.  Our intent is to leverage SparkTrials in combination with hyperopt to parallelize the training of models across a Spark cluster, allowing us to perform multiple, simultaneous model training evaluation runs and reduce the overall time required to navigate the seach space.  By replicating our datasets to the worker nodes of the cluster, a task performed in the next cell, copies of the data needed for training and evaluation can be efficiently made available to the function with minimal networking overhead:
-# MAGIC 
+# MAGIC
 # MAGIC **NOTE** See the Distributed Hyperopt [best practices documentation](https://docs.databricks.com/applications/machine-learning/automl-hyperparam-tuning/hyperopt-best-practices.html#handle-datasets-of-different-orders-of-magnitude-notebook) for more options for data distribution.
 
 # COMMAND ----------
@@ -219,7 +219,7 @@ search_space = {
 # COMMAND ----------
 
 # MAGIC %md ### Run Experiment
-# MAGIC 
+# MAGIC
 # MAGIC The remainder of the model evaluation function is fairly straightforward.  We simply train and evaluate our model and return our loss value, *i.e.* `-1 * AUC`, as part of a dictionary interpretable by hyperopt.  Based on returned values, hyperopt will generate a new set of hyperparameter values from within the search space definition with which it will attempt to improve our metric. We will limit the number of hyperopt evaluations to 250 simply based on a few trail runs we performed (not shown).  The larger the potential search space and the degree to which the model (in combination with the training dataset) responds to different hyperparameter combinations determines how many iterations are required for hyperopt to arrive at locally optimal values.  You can examine the output of the hyperopt run to see how our loss metric slowly improves over the course of each of these evaluations:
 
 # COMMAND ----------
@@ -308,11 +308,11 @@ with mlflow.start_run(run_name='XGB Final Model') as run:
 # COMMAND ----------
 
 # MAGIC %md ## Register Champion Model
-# MAGIC 
+# MAGIC
 # MAGIC After choosing a model that best fits our needs, we can then go ahead and kick off its operationalization proccess.
-# MAGIC 
+# MAGIC
 # MAGIC The first step is to register it to the **Model Registry**, where we can version, manage its life cycle with an workflow and track/audit all changes.<br><br>
-# MAGIC 
+# MAGIC
 # MAGIC ![](/files/shared_uploads/victor.rodrigues@databricks.com/ml_3.jpg)
 
 # COMMAND ----------
@@ -328,3 +328,30 @@ fs.log_model(
   training_set=training_set,
   registered_model_name=model_name
 )
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+from mlflow.onnx import _OnnxModelWrapper
+
+# COMMAND ----------
+
+class OnnxWrapper(_OnnxModelWrapper):
+
+  def predict(self):
+    print('hello')
+
+# COMMAND ----------
+
+model = OnnxWrapper()
